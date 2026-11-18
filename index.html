@@ -196,15 +196,22 @@ async function syncAir(){
   const hi=rows.findIndex(r=>norm(r[0])==='agent name');
   if(hi<0) throw new Error('Agent Name header not found');
 
-  const H=rows[hi].map(norm);
+const H=rows[hi].map(norm);
   const find=re=>H.findIndex(h=>re.test(h));
-  const C={
+  let C={
     i:find(/answered.*inbound/),
     o:find(/connected.*outbound/),
     ia:find(/inbound.*aht/),
     oa:find(/outbound.*aht/),
     acw:find(/\bacw\b/)
   };
+  if(Object.values(C).some(x=>x<0)){
+    // Header names did not survive the export, so use the known column order on the Summary tab.
+    C={i:2,o:3,ia:6,oa:7,acw:8};
+    const sample=rows.slice(hi+1).find(r=>match(r[0]));
+    const ok=sample && /^\d+$/.test((sample[C.i]||'').trim()) && /^\d{2}:\d{2}:\d{2}$/.test((sample[C.ia]||'').trim());
+    if(!ok) throw new Error('Could not verify column layout. First agent row: '+(sample?sample.slice(0,10).join(' | '):'no matching agent row'));
+  }
   if(Object.values(C).some(x=>x<0)) throw new Error('columns not found. Headers seen: '+rows[hi].slice(0,16).join(' | '));
 
   let hit=0;
