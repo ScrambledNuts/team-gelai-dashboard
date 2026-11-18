@@ -17,7 +17,7 @@ h1{margin:0;font-size:22px;font-weight:800;letter-spacing:-.01em;display:inline}
 .badge{display:inline-block;margin-left:10px;padding:2px 10px;border-radius:999px;background:#e7e5e4;color:#44403c;font-size:11px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;border:1px solid #d6d3ca;vertical-align:middle}
 .sub{color:var(--muted);font-size:12px;margin-top:2px}
 .controls{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
-.status{background:#fff;border:1px solid #d6d3ca;border-radius:8px;padding:6px 12px;font-size:12px;display:flex;gap:8px;align-items:center;max-width:560px}
+.status{background:#fff;border:1px solid #d6d3ca;border-radius:8px;padding:6px 12px;font-size:12px;display:flex;gap:8px;align-items:center;max-width:620px}
 .dot{width:9px;height:9px;border-radius:50%;background:#059669;flex:none}
 .btn{background:#44403c;color:#f5f5f4;border:0;border-radius:8px;padding:7px 14px;font-weight:600;font-size:12px;cursor:pointer}
 main{max-width:1600px;margin:0 auto;padding:20px;display:grid;gap:16px}
@@ -29,7 +29,7 @@ main{max-width:1600px;margin:0 auto;padding:20px;display:grid;gap:16px}
 .kpi .h{font-size:11px;color:var(--muted);margin-top:4px}
 .charts{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
 @media(max-width:1000px){.charts{grid-template-columns:1fr}}
-.charts h2,h2{font-size:14px;font-weight:700;margin:0 0 2px}
+h2{font-size:14px;font-weight:700;margin:0 0 2px}
 .charts p{margin:0 0 10px;color:var(--muted);font-size:12px}
 .chartbox{position:relative;height:250px}
 .tools{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:10px}
@@ -71,12 +71,12 @@ tfoot td{font-weight:700;background:#f5f5f4;border-top:2px solid #d6d3ca}
 <main>
   <section class="kpis">
     <div class="card kpi"><div class="l">Calls handled</div><div class="v mono" id="kCalls">–</div><div class="h" id="kSplit">–</div></div>
-    <div class="card kpi"><div class="l">Inbound AHT</div><div class="v mono">00:11:19</div><div class="h">Weighted team avg</div></div>
-    <div class="card kpi"><div class="l">Outbound AHT</div><div class="v mono">00:03:07</div><div class="h">Weighted team avg</div></div>
-    <div class="card kpi"><div class="l">Avg ACW</div><div class="v mono">00:00:31</div><div class="h">After-call wrap</div></div>
+    <div class="card kpi"><div class="l">Inbound AHT</div><div class="v mono" id="kIA">–</div><div class="h">Weighted team avg</div></div>
+    <div class="card kpi"><div class="l">Outbound AHT</div><div class="v mono" id="kOA">–</div><div class="h">Weighted team avg</div></div>
+    <div class="card kpi"><div class="l">Avg ACW</div><div class="v mono" id="kACW">–</div><div class="h">After-call wrap</div></div>
     <div class="card kpi"><div class="l">Team CSAT</div><div class="v mono g5" id="kCsat">–</div><div class="h" id="kStars">–</div></div>
     <div class="card kpi"><div class="l">Total surveys</div><div class="v mono" id="kSurv">–</div><div class="h" id="kWeeks">–</div></div>
-    <div class="card kpi"><div class="l">Available time</div><div class="v mono" style="font-size:18px">649:59:02</div><div class="h">Busy 77:20 • Off 102:00</div></div>
+    <div class="card kpi"><div class="l">Available time</div><div class="v mono" id="kAvail" style="font-size:18px">–</div><div class="h" id="kOff">–</div></div>
   </section>
 
   <section class="charts">
@@ -111,9 +111,9 @@ tfoot td{font-weight:700;background:#f5f5f4;border-top:2px solid #d6d3ca}
     <h2>Team Workforce &amp; Ringing Health</h2>
     <div class="sub" style="margin-bottom:10px">Aggregated Aircall availability and answer efficiency</div>
     <div class="wf">
-      <div><span>Available time</span><b class="mono g5">649:59:02 (78.4%)</b></div>
-      <div><span>Busy / in-call</span><b class="mono">77:20:56 (9.3%)</b></div>
-      <div><span>Not available (lunch/training/DND)</span><b class="mono g4">102:00:26 (12.3%)</b></div>
+      <div><span>Available time</span><b class="mono g5" id="wfAvail">–</b></div>
+      <div><span>Busy / in-call</span><b class="mono" id="wfBusy">–</b></div>
+      <div><span>Not available (lunch/training/DND)</span><b class="mono g4" id="wfNot">–</b></div>
       <div><span>Inbound answer rate</span><b class="mono">87.2% (531 / 609)</b></div>
     </div>
   </section>
@@ -124,23 +124,24 @@ const CSAT_ID='1rOIkpgBodbJXVqmFvdmaxzO46Qss9MlHdO0gL8k4L1U';
 const AIR_ID='1N4O-SNVol6nkV1wIQ9TvTBZ_hIbyxGyuH2b_2JlXICg';
 const gv=(id,sheet)=>`https://docs.google.com/spreadsheets/d/${id}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(sheet)}&t=${Date.now()}`;
 
-// Snapshot values from the screenshot. Live sync overwrites these.
+// Snapshot values (current Aircall Summary tab). Live sync overwrites these.
 // c = CSAT counts for 1,2,3,4,5 stars. i/o = inbound/outbound. ia/oa/a = AHT and ACW.
 let AGENTS=[
- {n:'John Wayne N.',k:'john wayne',p:'GG08',i:52,o:25,ia:'00:11:19',oa:'00:02:19',a:'00:00:34',c:[0,0,0,0,8]},
- {n:'Junjun B.',k:'junjun',p:'GG08',i:46,o:28,ia:'00:12:25',oa:'00:05:55',a:'00:00:21',c:[0,0,0,0,12]},
- {n:'Leobelyn M.',k:'leobelyn',p:'GG06',i:46,o:15,ia:'00:08:42',oa:'00:01:41',a:'00:00:08',c:[0,0,0,0,4]},
- {n:'Jose Armando C.',k:'jose armando',p:'GG08',i:46,o:14,ia:'00:09:53',oa:'00:01:12',a:'00:01:29',c:[0,0,0,0,9]},
- {n:'Stephen C.',k:'stephen',p:'GG08',i:44,o:27,ia:'00:10:48',oa:'00:01:46',a:'00:00:04',c:[0,0,0,1,6]},
- {n:'Joeval C.',k:'joeval',p:'GG08',i:43,o:18,ia:'00:12:47',oa:'00:03:07',a:'00:00:27',c:[0,0,0,0,9]},
- {n:'Jessica F.',k:'jessica',p:'GG03',i:41,o:9,ia:'00:12:32',oa:'00:03:06',a:'00:00:57',c:[0,0,0,0,11]},
- {n:'John Cedric S.',k:'cedric',p:'GG08',i:41,o:5,ia:'00:10:05',oa:'00:01:13',a:'00:00:23',c:[0,0,0,0,6]},
- {n:'John Francis C.',k:'francis',p:'GG08',i:40,o:13,ia:'00:13:15',oa:'00:02:46',a:'00:00:15',c:[0,0,0,0,14]},
- {n:'Prince Felix Troy A.',k:'prince',p:'GG08',i:38,o:18,ia:'00:11:00',oa:'00:02:21',a:'00:01:24',c:[0,0,0,0,6]},
- {n:'Paul Emerson B.',k:'paul',p:'GG04',i:37,o:25,ia:'00:10:38',oa:'00:02:18',a:'00:00:11',c:[0,0,0,0,11]},
+ {n:'John Wayne N.',k:'john wayne',p:'GG08',i:54,o:28,ia:'00:11:06',oa:'00:02:14',a:'00:00:33',c:[0,0,0,0,8]},
+ {n:'Junjun B.',k:'junjun',p:'GG08',i:48,o:28,ia:'00:12:29',oa:'00:05:55',a:'00:00:21',c:[0,0,0,0,12]},
+ {n:'Leobelyn M.',k:'leobelyn',p:'GG06',i:47,o:17,ia:'00:08:53',oa:'00:01:34',a:'00:00:08',c:[0,0,0,0,4]},
+ {n:'Jose Armando C.',k:'jose armando',p:'GG08',i:48,o:15,ia:'00:09:42',oa:'00:01:10',a:'00:01:32',c:[0,0,0,0,9]},
+ {n:'Stephen C.',k:'stephen',p:'GG08',i:45,o:29,ia:'00:10:41',oa:'00:01:43',a:'00:00:04',c:[0,0,0,1,6]},
+ {n:'Joeval C.',k:'joeval',p:'GG08',i:45,o:20,ia:'00:12:37',oa:'00:02:57',a:'00:00:26',c:[0,0,0,0,9]},
+ {n:'Jessica F.',k:'jessica',p:'GG03',i:44,o:9,ia:'00:12:31',oa:'00:03:06',a:'00:00:55',c:[0,0,0,0,11]},
+ {n:'John Cedric S.',k:'cedric',p:'GG08',i:43,o:5,ia:'00:09:57',oa:'00:01:13',a:'00:00:22',c:[0,0,0,0,6]},
+ {n:'John Francis C.',k:'francis',p:'GG08',i:42,o:13,ia:'00:12:56',oa:'00:02:46',a:'00:00:15',c:[0,0,0,0,14]},
+ {n:'Prince Felix Troy A.',k:'prince',p:'GG08',i:39,o:18,ia:'00:11:12',oa:'00:02:21',a:'00:01:23',c:[0,0,0,0,6]},
+ {n:'Paul Emerson B.',k:'paul',p:'GG04',i:37,o:28,ia:'00:10:38',oa:'00:02:20',a:'00:00:10',c:[0,0,0,0,11]},
  {n:'Judy Flor Q.',k:'judy',p:'GG08',i:35,o:9,ia:'00:12:34',oa:'00:02:31',a:'00:00:37',c:[0,0,0,0,9]},
- {n:'Adonis James S.',k:'adonis',p:'GG04',i:22,o:27,ia:'00:11:42',oa:'00:06:05',a:'00:00:07',c:[0,0,0,0,10]}
+ {n:'Adonis James S.',k:'adonis',p:'GG04',i:24,o:27,ia:'00:12:41',oa:'00:06:05',a:'00:00:07',c:[0,0,0,0,10]}
 ];
+let TEAM={ia:'00:11:19',oa:'00:03:02',acw:'00:00:32',avail:'1022:45:56',busy:'124:37:21',notavail:'201:06:30'};
 let WEEKS=[27,53,36];
 let sortK='tot',sortDir=-1;
 
@@ -169,7 +170,9 @@ function parseCSV(t){
 
 // CSAT: DUMP HERE tab. Columns: date (A), customer (B), assignee (C), score (D), comment (E).
 async function syncCsat(){
-  const rows=parseCSV(await (await fetch(gv(CSAT_ID,'DUMP HERE'))).text()).slice(1);
+  const res=await fetch(gv(CSAT_ID,'DUMP HERE'));
+  if(!res.ok) throw new Error('HTTP '+res.status+' (check sharing)');
+  const rows=parseCSV(await res.text()).slice(1);
   const counts={};AGENTS.forEach(a=>counts[a.k]=[0,0,0,0,0]);
   const wk=[0,0,0];
   for(const r of rows){
@@ -182,23 +185,27 @@ async function syncCsat(){
   WEEKS=wk;
 }
 
-// Aircall: Summary tab. Needs headers containing "inbound" and "outbound" plus an agent name column.
+// Aircall: Summary tab. Header row starts with "Agent Name"; team totals row starts with "TEAM TOTAL".
 async function syncAir(){
-  const rows=parseCSV(await (await fetch(gv(AIR_ID,'Summary'))).text());
-  const hdr=rows.find(r=>r.some(x=>/inbound/i.test(x))&&r.some(x=>/outbound/i.test(x)));
-  if(!hdr) return false;
-  const col=re=>hdr.findIndex(x=>re.test(x));
-  const cIn=col(/answered.*inbound|inbound.*answered|^inbound$/i), cOut=col(/connected.*outbound|outbound.*connected|^outbound$/i);
-  const cIA=col(/inbound.*aht/i), cOA=col(/outbound.*aht/i), cACW=col(/acw/i);
-  if(cIn<0||cOut<0) return false;
+  const res=await fetch(gv(AIR_ID,'Summary'));
+  if(!res.ok) throw new Error('HTTP '+res.status+' (check sharing)');
+  const rows=parseCSV(await res.text());
+  const hi=rows.findIndex(r=>r[0]==='Agent Name');
+  if(hi<0) throw new Error('Agent Name header not found');
+  const H=rows[hi], col=n=>H.indexOf(n);
+  const C={i:col('Answered Inbound'),o:col('Connected Outbound'),ia:col('Inbound AHT'),oa:col('Outbound AHT'),acw:col('Avg ACW')};
+  if(Object.values(C).some(x=>x<0)) throw new Error('expected columns missing');
   let hit=0;
-  for(const r of rows){
+  for(const r of rows.slice(hi+1)){
     const a=match(r[0]); if(!a) continue;
-    a.i=parseInt(r[cIn],10)||0; a.o=parseInt(r[cOut],10)||0;
-    if(cIA>=0&&r[cIA]) a.ia=r[cIA]; if(cOA>=0&&r[cOA]) a.oa=r[cOA]; if(cACW>=0&&r[cACW]) a.a=r[cACW];
-    hit++;
+    a.i=parseInt(r[C.i],10)||0; a.o=parseInt(r[C.o],10)||0;
+    a.ia=r[C.ia]; a.oa=r[C.oa]; a.a=r[C.acw]; hit++;
   }
-  return hit>0;
+  if(!hit) throw new Error('no agent rows matched');
+  const t=rows.find(r=>/team total/i.test(r[0]||''));
+  if(t) TEAM={...TEAM,ia:t[C.ia],oa:t[C.oa],acw:t[C.acw]};
+  const li=rows.findIndex(r=>r[0]==='Team Available Time');
+  if(li>=0) TEAM={...TEAM,avail:rows[li+1][0],busy:rows[li+1][1],notavail:rows[li+1][2]};
 }
 
 const charts={};
@@ -221,12 +228,19 @@ function renderKpis(R){
   const csat=sv?R.reduce((x,a)=>x+a.avg*a.sv,0)/sv:0;
   document.getElementById('kCalls').textContent=tot;
   document.getElementById('kSplit').textContent=`${inn} In • ${out} Out`;
+  document.getElementById('kIA').textContent=TEAM.ia;
+  document.getElementById('kOA').textContent=TEAM.oa;
+  document.getElementById('kACW').textContent=TEAM.acw;
   document.getElementById('kCsat').textContent=csat.toFixed(2);
   document.getElementById('kStars').textContent=`${star[4]}× 5★ • ${star[3]}× 4★`;
   document.getElementById('kSurv').textContent=sv;
   document.getElementById('kWeeks').textContent=`W1: ${WEEKS[0]} • W2: ${WEEKS[1]} • W3: ${WEEKS[2]}`;
+  document.getElementById('kAvail').textContent=TEAM.avail;
+  document.getElementById('kOff').textContent=`Busy ${TEAM.busy} • Off ${TEAM.notavail}`;
+  document.getElementById('wfAvail').textContent=TEAM.avail;
+  document.getElementById('wfBusy').textContent=TEAM.busy;
+  document.getElementById('wfNot').textContent=TEAM.notavail;
   document.getElementById('cCsatSub').textContent=`5-star vs. 4-star survey counts (total: ${sv})`;
-  return star;
 }
 
 function renderTable(){
@@ -243,8 +257,8 @@ function renderTable(){
   const star=[0,1,2,3,4].map(idx=>all.reduce((x,a)=>x+a.c[idx],0));
   const csat=sv?all.reduce((x,a)=>x+a.avg*a.sv,0)/sv:0;
   document.getElementById('foot').innerHTML=`<tr><td>Team total / weighted avg (13 agents)</td><td>${ti}</td><td>${to}</td><td>${T}</td>
-    <td class="mono">00:11:19</td><td class="mono">00:03:07</td><td class="mono">00:00:31</td>
-    ${star.map((n,idx)=>`<td>${n}</td>`).join('')}<td>${sv}</td><td>${csat.toFixed(2)}</td></tr>`;
+    <td class="mono">${TEAM.ia}</td><td class="mono">${TEAM.oa}</td><td class="mono">${TEAM.acw}</td>
+    ${star.map(n=>`<td>${n}</td>`).join('')}<td>${sv}</td><td>${csat.toFixed(2)}</td></tr>`;
   document.querySelectorAll('th[data-k]').forEach(th=>th.textContent=th.textContent.replace(/ [▲▼]$/,'')+(th.dataset.k===sortK?(sortDir>0?' ▲':' ▼'):''));
 }
 
@@ -277,13 +291,15 @@ function setSt(msg,busy){
   document.getElementById('dot').style.background=busy?'#d97706':'#059669';
 }
 
+let next=Date.now()+300000;
+
 async function syncAll(){
   next=Date.now()+300000;
   const btn=document.getElementById('syncBtn');btn.disabled=true;
   setSt('Fetching live Google Sheets…',true);
   const msgs=[];
-  try{await syncCsat();msgs.push('CSAT live')}catch(e){msgs.push('CSAT not reachable (check sharing)')}
-  try{msgs.push((await syncAir())?'Aircall live':'Aircall layout not recognized, kept last values')}catch(e){msgs.push('Aircall not reachable (check sharing)')}
+  try{await syncCsat();msgs.push('CSAT live')}catch(e){console.error(e);msgs.push('CSAT: '+e.message)}
+  try{await syncAir();msgs.push('Aircall live')}catch(e){console.error(e);msgs.push('Aircall: '+e.message)}
   renderAll();
   setSt(msgs.join(' · ')+' · '+new Date().toLocaleTimeString(),false);
   btn.disabled=false;
@@ -293,7 +309,6 @@ document.querySelectorAll('th[data-k]').forEach(th=>th.addEventListener('click',
   const k=th.dataset.k;sortDir=(sortK===k)?-sortDir:-1;sortK=k;renderTable();
 }));
 
-let next=Date.now()+300000;
 setInterval(()=>{
   const s=Math.max(0,Math.round((next-Date.now())/1000));
   document.getElementById('cd').textContent=String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0');
