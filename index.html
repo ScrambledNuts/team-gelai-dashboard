@@ -187,14 +187,19 @@ async function syncCsat(){
 
 // Aircall: Summary tab. Header row starts with "Agent Name"; team totals row starts with "TEAM TOTAL".
 async function syncAir(){
-  const res=await fetch(gv(AIR_ID,'Summary'));
-  if(!res.ok) throw new Error('HTTP '+res.status+' (check sharing)');
-  const rows=parseCSV(await res.text());
-  const hi=rows.findIndex(r=>r[0]==='Agent Name');
-  if(hi<0) throw new Error('Agent Name header not found');
-  const H=rows[hi], col=n=>H.indexOf(n);
-  const C={i:col('Answered Inbound'),o:col('Connected Outbound'),ia:col('Inbound AHT'),oa:col('Outbound AHT'),acw:col('Avg ACW')};
-  if(Object.values(C).some(x=>x<0)) throw new Error('expected columns missing');
+const norm=s=>String(s||'').toLowerCase().replace(/\s+/g,' ').trim();
+const hi=rows.findIndex(r=>norm(r[0])==='agent name');
+if(hi<0) throw new Error('Agent Name header not found');
+const H=rows[hi].map(norm);
+const find=re=>H.findIndex(h=>re.test(h));
+const C={
+  i:find(/answered.*inbound/),
+  o:find(/connected.*outbound/),
+  ia:find(/inbound.*aht/),
+  oa:find(/outbound.*aht/),
+  acw:find(/\bacw\b/)
+};
+if(Object.values(C).some(x=>x<0)) throw new Error('columns not found. Headers seen: '+rows[hi].slice(0,16).join(' | '));
   let hit=0;
   for(const r of rows.slice(hi+1)){
     const a=match(r[0]); if(!a) continue;
