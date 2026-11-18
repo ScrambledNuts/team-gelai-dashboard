@@ -187,32 +187,42 @@ async function syncCsat(){
 
 // Aircall: Summary tab. Header row starts with "Agent Name"; team totals row starts with "TEAM TOTAL".
 async function syncAir(){
-const norm=s=>String(s||'').toLowerCase().replace(/\s+/g,' ').trim();
-const hi=rows.findIndex(r=>norm(r[0])==='agent name');
-if(hi<0) throw new Error('Agent Name header not found');
-const H=rows[hi].map(norm);
-const find=re=>H.findIndex(h=>re.test(h));
-const C={
-  i:find(/answered.*inbound/),
-  o:find(/connected.*outbound/),
-  ia:find(/inbound.*aht/),
-  oa:find(/outbound.*aht/),
-  acw:find(/\bacw\b/)
-};
-if(Object.values(C).some(x=>x<0)) throw new Error('columns not found. Headers seen: '+rows[hi].slice(0,16).join(' | '));
+  const res=await fetch(gv(AIR_ID,'Summary'));
+  if(!res.ok) throw new Error('HTTP '+res.status+' (check sharing)');
+  const rows=parseCSV(await res.text());
+  if(!Array.isArray(rows)||!rows.length) throw new Error('Summary tab came back empty');
+
+  const norm=s=>String(s||'').toLowerCase().replace(/\s+/g,' ').trim();
+  const hi=rows.findIndex(r=>norm(r[0])==='agent name');
+  if(hi<0) throw new Error('Agent Name header not found');
+
+  const H=rows[hi].map(norm);
+  const find=re=>H.findIndex(h=>re.test(h));
+  const C={
+    i:find(/answered.*inbound/),
+    o:find(/connected.*outbound/),
+    ia:find(/inbound.*aht/),
+    oa:find(/outbound.*aht/),
+    acw:find(/\bacw\b/)
+  };
+  if(Object.values(C).some(x=>x<0)) throw new Error('columns not found. Headers seen: '+rows[hi].slice(0,16).join(' | '));
+
   let hit=0;
   for(const r of rows.slice(hi+1)){
     const a=match(r[0]); if(!a) continue;
-    a.i=parseInt(r[C.i],10)||0; a.o=parseInt(r[C.o],10)||0;
-    a.ia=r[C.ia]; a.oa=r[C.oa]; a.a=r[C.acw]; hit++;
+    a.i=parseInt(r[C.i],10)||0;
+    a.o=parseInt(r[C.o],10)||0;
+    a.ia=r[C.ia]; a.oa=r[C.oa]; a.a=r[C.acw];
+    hit++;
   }
   if(!hit) throw new Error('no agent rows matched');
+
   const t=rows.find(r=>/team total/i.test(r[0]||''));
   if(t) TEAM={...TEAM,ia:t[C.ia],oa:t[C.oa],acw:t[C.acw]};
-  const li=rows.findIndex(r=>r[0]==='Team Available Time');
-  if(li>=0) TEAM={...TEAM,avail:rows[li+1][0],busy:rows[li+1][1],notavail:rows[li+1][2]};
-}
 
+  const li=rows.findIndex(r=>norm(r[0])==='team available time');
+  if(li>=0&&rows[li+1]) TEAM={...TEAM,avail:rows[li+1][0],busy:rows[li+1][1],notavail:rows[li+1][2]};
+}
 const charts={};
 function initCharts(){
   const short=AGENTS.map(a=>a.n);
