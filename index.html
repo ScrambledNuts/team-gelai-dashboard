@@ -1,967 +1,829 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Team Gelai Command Center</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet">
-  <style>
-    body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #f7f6f3; color: #33322e; }
-    .mono { font-family: 'JetBrains Mono', monospace; }
-    .creme-card { background: #ffffff; border: 1px solid #e6e4df; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02); }
-    .kpi-creme { background: #fdfbf7; border: 1px solid #dedcd5; transition: all 0.15s ease; }
-    .kpi-creme:hover { border-color: #b5b2a6; transform: translateY(-1px); }
-    ::-webkit-scrollbar { width: 8px; height: 8px; }
-    ::-webkit-scrollbar-track { background: #f0eeeb; }
-    ::-webkit-scrollbar-thumb { background: #d1cfc7; border-radius: 4px; }
-    ::-webkit-scrollbar-thumb:hover { background: #b5b2a6; }
-    th.sortable { cursor: pointer; user-select: none; }
-    th.sortable:hover { color: #525049; background-color: #eeebe5; }
-  </style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Team Gelai Command Center</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #f7f6f3; color: #33322e; }
+.mono { font-family: 'JetBrains Mono', monospace; }
+.creme-card { background: #ffffff; border: 1px solid #e6e4df; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02); }
+.kpi-creme { background: #fdfbf7; border: 1px solid #dedcd5; transition: all 0.15s ease; }
+.kpi-creme:hover { border-color: #b5b2a6; transform: translateY(-1px); }
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: #f0eeeb; }
+::-webkit-scrollbar-thumb { background: #d1cfc7; border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: #b5b2a6; }
+th.sortable { cursor: pointer; user-select: none; }
+th.sortable:hover { color: #525049; background-color: #eeebe5; }
+</style>
 </head>
 <body class="min-h-screen antialiased selection:bg-stone-200 selection:text-stone-900">
 
-  <!-- Top Command Header -->
-  <header class="sticky top-0 z-30 border-b border-stone-300 bg-[#fdfbf7]/95 backdrop-blur-md">
-    <div class="max-w-[1600px] mx-auto px-4 sm:px-6 py-3.5 flex flex-wrap items-center justify-between gap-4">
-      <div class="flex items-center gap-3.5">
-        <div class="h-10 w-10 rounded-xl bg-stone-800 text-stone-100 flex items-center justify-center shadow-sm">
-          <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" />
-          </svg>
-        </div>
-        <div>
-          <div class="flex items-center gap-2.5">
-            <h1 class="text-xl sm:text-2xl font-extrabold tracking-tight text-stone-900">Team Gelai Command Center</h1>
-            <span class="px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wider rounded-full bg-stone-200 text-stone-700 border border-stone-300">Phone Channel • 13 Agents</span>
-          </div>
-          <p class="text-xs text-stone-500 mt-0.5">Live BPO Telephony (<code class="text-stone-700">Summary</code>) &amp; CSAT Intelligence (<code class="text-stone-700">Summary - Gelai</code>)</p>
-        </div>
-      </div>
-
-      <!-- Sync Controls & 5-Min Countdown -->
-      <div class="flex flex-wrap items-center gap-3">
-        <div class="flex items-center gap-2.5 px-3.5 py-1.5 rounded-lg bg-white border border-stone-300 text-xs shadow-sm">
-          <span id="syncDot" class="h-2.5 w-2.5 rounded-full bg-emerald-600 animate-pulse"></span>
-          <span id="syncStatusText" class="text-stone-700 font-medium">Ready to Sync Sheets</span>
-          <span class="text-stone-300">|</span>
-          <span class="text-stone-500">Next refresh: <strong id="countdownTimer" class="mono text-stone-800">05:00</strong></span>
-        </div>
-        <button id="syncNowBtn" onclick="syncAllData()" class="px-3.5 py-1.5 rounded-lg bg-stone-800 hover:bg-stone-700 text-stone-100 font-semibold text-xs transition flex items-center gap-1.5 shadow-sm cursor-pointer">
-          <svg id="syncIcon" class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.4" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
-          </svg>
-          Sync Live Sheets
-        </button>
-      </div>
-    </div>
-  </header>
-
-  <main class="max-w-[1600px] mx-auto px-4 sm:px-6 py-6 space-y-6">
-
-    <!-- Top Executive KPI Strip (7 Cards) -->
-    <section class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3.5">
-      <div class="kpi-creme rounded-xl p-4 shadow-sm">
-        <div class="text-[11px] font-semibold uppercase tracking-wider text-stone-500">Calls Handled</div>
-        <div id="kpiTotalCalls" class="mono text-2xl font-bold text-stone-900 mt-1.5">797</div>
-        <div id="kpiCallsSplit" class="text-[11px] text-stone-600 mt-1">551 In • 246 Out</div>
-      </div>
-
-      <div class="kpi-creme rounded-xl p-4 shadow-sm">
-        <div class="text-[11px] font-semibold uppercase tracking-wider text-stone-500">Inbound AHT</div>
-        <div id="kpiInboundAht" class="mono text-2xl font-bold text-stone-900 mt-1.5">00:11:19</div>
-        <div class="text-[11px] text-stone-600 mt-1">Weighted Team Avg</div>
-      </div>
-
-      <div class="kpi-creme rounded-xl p-4 shadow-sm">
-        <div class="text-[11px] font-semibold uppercase tracking-wider text-stone-500">Outbound AHT</div>
-        <div id="kpiOutboundAht" class="mono text-2xl font-bold text-stone-900 mt-1.5">00:03:02</div>
-        <div class="text-[11px] text-stone-600 mt-1">Weighted Team Avg</div>
-      </div>
-
-      <div class="kpi-creme rounded-xl p-4 shadow-sm">
-        <div class="text-[11px] font-semibold uppercase tracking-wider text-stone-500">Avg ACW</div>
-        <div id="kpiAvgAcw" class="mono text-2xl font-bold text-stone-900 mt-1.5">00:00:31</div>
-        <div class="text-[11px] text-stone-600 mt-1">After-Call Wrap</div>
-      </div>
-
-      <div class="kpi-creme rounded-xl p-4 shadow-sm">
-        <div class="text-[11px] font-semibold uppercase tracking-wider text-stone-500">Team CSAT</div>
-        <div id="kpiTeamCsat" class="mono text-2xl font-bold text-emerald-700 mt-1.5">4.99</div>
-        <div id="kpiCsatStars" class="text-[11px] text-stone-600 mt-1">115× 5★ • 1× 4★</div>
-      </div>
-
-      <div class="kpi-creme rounded-xl p-4 shadow-sm">
-        <div class="text-[11px] font-semibold uppercase tracking-wider text-stone-500">Total Surveys</div>
-        <div id="kpiTotalSurveys" class="mono text-2xl font-bold text-stone-900 mt-1.5">116</div>
-        <div id="kpiWeeklySplit" class="text-[11px] text-stone-600 mt-1">W1: 27 • W2: 53 • W3: 36</div>
-      </div>
-
-      <div class="kpi-creme rounded-xl p-4 col-span-2 sm:col-span-1 shadow-sm">
-        <div class="text-[11px] font-semibold uppercase tracking-wider text-stone-500">Available Time</div>
-        <div id="kpiAvailTime" class="mono text-xl sm:text-2xl font-bold text-stone-900 mt-1.5">1022:45:56</div>
-        <div id="kpiBusyNotAvail" class="text-[11px] text-stone-600 mt-1">Busy: 124:37 • Off: 201:06</div>
-      </div>
-    </section>
-
-    <!-- Visual Analytics Row -->
-    <section class="grid grid-cols-1 lg:grid-cols-3 gap-5">
-      <!-- Chart 1: Call Volume by Agent -->
-      <div class="creme-card rounded-xl p-5 flex flex-col">
-        <div class="flex items-center justify-between mb-3">
-          <div>
-            <h2 class="text-sm font-bold text-stone-900">Call Volume Distribution</h2>
-            <p class="text-xs text-stone-500">Answered Inbound vs. Connected Outbound</p>
-          </div>
-          <span class="text-[11px] px-2 py-0.5 rounded bg-stone-200 text-stone-700">Aircall Summary</span>
-        </div>
-        <div class="relative h-64 w-full">
-          <canvas id="volumeChart"></canvas>
-        </div>
-      </div>
-
-      <!-- Chart 2: Handle Time Comparison -->
-      <div class="creme-card rounded-xl p-5 flex flex-col">
-        <div class="flex items-center justify-between mb-3">
-          <div>
-            <h2 class="text-sm font-bold text-stone-900">AHT &amp; ACW Comparison (Minutes)</h2>
-            <p class="text-xs text-stone-500">Inbound AHT, Outbound AHT &amp; Avg ACW</p>
-          </div>
-          <span class="text-[11px] px-2 py-0.5 rounded bg-stone-200 text-stone-700">Efficiency</span>
-        </div>
-        <div class="relative h-64 w-full">
-          <canvas id="ahtChart"></canvas>
-        </div>
-      </div>
-
-      <!-- Chart 3: CSAT Star Rating Breakdown -->
-      <div class="creme-card rounded-xl p-5 flex flex-col">
-        <div class="flex items-center justify-between mb-3">
-          <div>
-            <h2 class="text-sm font-bold text-stone-900">CSAT Rating Distribution</h2>
-            <p id="csatChartSubtitle" class="text-xs text-stone-500">5-Star vs. 4-Star Survey Counts (Total: 116)</p>
-          </div>
-          <span id="csatChartBadge" class="text-[11px] px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300">4.99 Avg</span>
-        </div>
-        <div class="relative h-64 w-full">
-          <canvas id="csatChart"></canvas>
-        </div>
-      </div>
-    </section>
-
-    <!-- Consolidated Agent Performance & CSAT Scorecard Table -->
-    <section class="creme-card rounded-xl overflow-hidden shadow-sm">
-      <div class="p-5 border-b border-stone-200 flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <h2 class="text-base font-bold text-stone-900">Consolidated Agent Performance &amp; CSAT Scorecard</h2>
-          <p class="text-xs text-stone-500 mt-0.5">Unified Aircall telephony metrics and live-synced CSAT survey ratings across all 13 Team Gelai agents</p>
-        </div>
-        <div class="flex flex-wrap items-center gap-2.5">
-          <input id="agentSearch" type="text" placeholder="Filter agent or pod..." oninput="renderTable()"
-            class="px-3 py-1.5 rounded-lg bg-white border border-stone-300 text-xs text-stone-900 placeholder-stone-400 focus:outline-none focus:border-stone-600 shadow-sm" />
-          <select id="podFilter" onchange="renderTable()"
-            class="px-3 py-1.5 rounded-lg bg-white border border-stone-300 text-xs text-stone-800 focus:outline-none focus:border-stone-600 shadow-sm">
-            <option value="ALL">All Pods (13)</option>
-            <option value="GG08">Pod GG08 (9)</option>
-            <option value="GG04">Pod GG04 (2)</option>
-            <option value="GG06">Pod GG06 (1)</option>
-            <option value="GG03">Pod GG03 (1)</option>
-          </select>
-        </div>
-      </div>
-
-      <div class="overflow-x-auto">
-        <table class="w-full text-left border-collapse text-xs">
-          <thead>
-            <tr class="bg-stone-100 text-stone-700 border-b border-stone-200 uppercase tracking-wider text-[11px]">
-              <th class="py-3 px-4 sortable" onclick="sortBy('name')">Agent Name ↕</th>
-              <th class="py-3 px-3 text-right sortable" onclick="sortBy('inbound')">Inbound ↕</th>
-              <th class="py-3 px-3 text-right sortable" onclick="sortBy('outbound')">Outbound ↕</th>
-              <th class="py-3 px-3 text-right sortable" onclick="sortBy('totalCalls')">Total Calls ↕</th>
-              <th class="py-3 px-3 text-right sortable" onclick="sortBy('inAhtSec')">Inbound AHT ↕</th>
-              <th class="py-3 px-3 text-right sortable" onclick="sortBy('outAhtSec')">Outbound AHT ↕</th>
-              <th class="py-3 px-3 text-right sortable" onclick="sortBy('acwSec')">Avg ACW ↕</th>
-              <th class="py-3 px-2 text-center border-l border-stone-200">★</th>
-              <th class="py-3 px-2 text-center">★★</th>
-              <th class="py-3 px-2 text-center">★★★</th>
-              <th class="py-3 px-2 text-center">★★★★</th>
-              <th class="py-3 px-2 text-center">★★★★★</th>
-              <th class="py-3 px-3 text-right sortable" onclick="sortBy('surveys')">Surveys ↕</th>
-              <th class="py-3 px-4 text-right sortable" onclick="sortBy('csatAvg')">CSAT Avg ↕</th>
-            </tr>
-          </thead>
-          <tbody id="scorecardBody" class="divide-y divide-stone-200"></tbody>
-          <tfoot id="scorecardFoot" class="bg-stone-100 font-bold text-stone-900 border-t-2 border-stone-300"></tfoot>
-        </table>
-      </div>
-    </section>
-
-    <!-- Bottom Row: Workforce Breakdown -->
-    <section class="creme-card rounded-xl p-5 space-y-4 shadow-sm">
-      <div>
-        <h2 class="text-sm font-bold text-stone-900">Team Workforce &amp; Ringing Health</h2>
-        <p class="text-xs text-stone-500">Aggregated Aircall availability &amp; answer efficiency from <code class="text-stone-700">Summary</code></p>
-      </div>
-
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
-        <div class="p-3 rounded-lg bg-stone-50 border border-stone-200 flex items-center justify-between">
-          <span class="text-stone-600">Available Time</span>
-          <span id="wfAvail" class="mono font-bold text-emerald-700">1022:45:56 (75.8%)</span>
-        </div>
-        <div class="p-3 rounded-lg bg-stone-50 border border-stone-200 flex items-center justify-between">
-          <span class="text-stone-600">Busy / In-Call Time</span>
-          <span id="wfBusy" class="mono font-bold text-sky-700">124:37:21 (9.2%)</span>
-        </div>
-        <div class="p-3 rounded-lg bg-stone-50 border border-stone-200 flex items-center justify-between">
-          <span class="text-stone-600">Not Available (Lunch/Training/DND)</span>
-          <span id="wfNotAvail" class="mono font-bold text-amber-700">201:06:30 (14.9%)</span>
-        </div>
-        <div class="p-3 rounded-lg bg-stone-50 border border-stone-200 flex items-center justify-between">
-          <span class="text-stone-600">Inbound Answer Rate</span>
-          <span id="wfAnswerRate" class="mono font-bold text-stone-900">87.2% (551 / 632 Rings)</span>
-        </div>
-      </div>
-    </section>
-
-  </main>
-
-  <script>
-    // Target Spreadsheets & Exact Sheet Names
-    const AIRCALL_SHEET_ID = '1N4O-SNVol6nkV1wIQ9TvTBZ_hIbyxGyuH2b_2JlXICg';
-    const CSAT_SHEET_ID    = '1rOIkpgBodbJXVqmFvdmaxzO46Qss9MlHdO0gL8k4L1U';
-
-    const AIRCALL_DASHBOARD_CSV_URL = `https://docs.google.com/spreadsheets/d/${AIRCALL_SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent('Dashboard')}`;
-    const AIRCALL_SUMMARY_CSV_URL   = `https://docs.google.com/spreadsheets/d/${AIRCALL_SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent('Summary')}`;
-    const CSAT_CSV_URL    = `https://docs.google.com/spreadsheets/d/${CSAT_SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent('Summary - Gelai')}`;
-
-    const DASHBOARD_DATA = {
-      teamMetrics: {
-        totalCalls: 821,
-        answeredInbound: 568,
-        connectedOutbound: 253,
-        inboundAht: '00:11:13',
-        outboundAht: '00:03:01',
-        avgAcw: '00:00:32',
-        availTime: '1056:51:31',
-        busyTime: '127:28:13',
-        notAvailTime: '202:07:44',
-        ringingPickedUp: 581,
-        ringingMissed: 60,
-        teamCsat: 4.99,
-        totalSurveys: 119,
-        w1Surveys: 27,
-        w2Surveys: 53,
-        w3Surveys: 39,
-        total5Stars: 118,
-        total4Stars: 1,
-        total3Stars: 0,
-        total2Stars: 0,
-        total1Stars: 0
-      },
-      agents: [
-        { pod: 'GG08', name: 'John Wayne N.', inbound: 56, outbound: 29, totalCalls: 85, inAht: '00:10:54', outAht: '00:02:14', acw: '00:00:33', totalInTime: '10:10:49', totalOutTime: '01:04:53', totalAcwTime: '00:48:27', pickedUp: 56, missed: 4, s1: 0, s2: 0, s3: 0, s4: 0, s5: 8, surveys: 8, csatAvg: 5.00 },
-        { pod: 'GG08', name: 'Junjun B.', inbound: 50, outbound: 31, totalCalls: 81, inAht: '00:12:27', outAht: '00:05:28', acw: '00:00:21', totalInTime: '10:23:16', totalOutTime: '02:49:51', totalAcwTime: '00:28:51', pickedUp: 51, missed: 5, s1: 0, s2: 0, s3: 0, s4: 0, s5: 14, surveys: 14, csatAvg: 5.00 },
-        { pod: 'GG08', name: 'Stephen C.', inbound: 46, outbound: 30, totalCalls: 76, inAht: '00:10:32', outAht: '00:01:53', acw: '00:00:04', totalInTime: '08:05:08', totalOutTime: '00:56:34', totalAcwTime: '00:05:29', pickedUp: 46, missed: 2, s1: 0, s2: 0, s3: 0, s4: 1, s5: 6, surveys: 7, csatAvg: 4.86 },
-        { pod: 'GG04', name: 'Paul Emerson B.', inbound: 38, outbound: 28, totalCalls: 66, inAht: '00:10:29', outAht: '00:02:20', acw: '00:00:10', totalInTime: '06:38:52', totalOutTime: '01:05:20', totalAcwTime: '00:11:50', pickedUp: 38, missed: 5, s1: 0, s2: 0, s3: 0, s4: 0, s5: 11, surveys: 11, csatAvg: 5.00 },
-        { pod: 'GG08', name: 'Joeval C.', inbound: 46, outbound: 20, totalCalls: 66, inAht: '00:12:31', outAht: '00:02:57', acw: '00:00:26', totalInTime: '09:36:11', totalOutTime: '00:59:04', totalAcwTime: '00:29:45', pickedUp: 47, missed: 8, s1: 0, s2: 0, s3: 0, s4: 0, s5: 9, surveys: 9, csatAvg: 5.00 },
-        { pod: 'GG06', name: 'Leobelyn M.', inbound: 49, outbound: 18, totalCalls: 67, inAht: '00:08:41', outAht: '00:01:32', acw: '00:00:08', totalInTime: '07:06:02', totalOutTime: '00:27:45', totalAcwTime: '00:09:34', pickedUp: 51, missed: 4, s1: 0, s2: 0, s3: 0, s4: 0, s5: 5, surveys: 5, csatAvg: 5.00 },
-        { pod: 'GG08', name: 'Jose Armando C.', inbound: 50, outbound: 15, totalCalls: 65, inAht: '00:09:33', outAht: '00:01:10', acw: '00:01:31', totalInTime: '07:57:42', totalOutTime: '00:17:33', totalAcwTime: '01:37:57', pickedUp: 50, missed: 4, s1: 0, s2: 0, s3: 0, s4: 0, s5: 9, surveys: 9, csatAvg: 5.00 },
-        { pod: 'GG08', name: 'Prince Felix Troy A.', inbound: 39, outbound: 18, totalCalls: 57, inAht: '00:11:12', outAht: '00:02:21', acw: '00:01:23', totalInTime: '07:17:07', totalOutTime: '00:42:25', totalAcwTime: '01:19:23', pickedUp: 40, missed: 5, s1: 0, s2: 0, s3: 0, s4: 0, s5: 6, surveys: 6, csatAvg: 5.00 },
-        { pod: 'GG08', name: 'John Francis C.', inbound: 44, outbound: 13, totalCalls: 57, inAht: '00:13:07', outAht: '00:02:46', acw: '00:00:15', totalInTime: '09:37:19', totalOutTime: '00:36:10', totalAcwTime: '00:14:53', pickedUp: 45, missed: 4, s1: 0, s2: 0, s3: 0, s4: 0, s5: 14, surveys: 14, csatAvg: 5.00 },
-        { pod: 'GG03', name: 'Jessica F.', inbound: 45, outbound: 10, totalCalls: 55, inAht: '00:12:25', outAht: '00:03:00', acw: '00:00:54', totalInTime: '09:19:15', totalOutTime: '00:30:04', totalAcwTime: '00:51:58', pickedUp: 46, missed: 5, s1: 0, s2: 0, s3: 0, s4: 0, s5: 11, surveys: 11, csatAvg: 5.00 },
-        { pod: 'GG04', name: 'Adonis James S.', inbound: 26, outbound: 27, totalCalls: 53, inAht: '00:12:36', outAht: '00:06:05', acw: '00:00:07', totalInTime: '05:27:53', totalOutTime: '02:44:17', totalAcwTime: '00:06:55', pickedUp: 29, missed: 3, s1: 0, s2: 0, s3: 0, s4: 0, s5: 10, surveys: 10, csatAvg: 5.00 },
-        { pod: 'GG08', name: 'John Cedric S.', inbound: 44, outbound: 5, totalCalls: 49, inAht: '00:09:46', outAht: '00:01:13', acw: '00:00:22', totalInTime: '07:10:20', totalOutTime: '00:06:05', totalAcwTime: '00:18:40', pickedUp: 46, missed: 7, s1: 0, s2: 0, s3: 0, s4: 0, s5: 6, surveys: 6, csatAvg: 5.00 },
-        { pod: 'GG08', name: 'Judy Flor Q.', inbound: 35, outbound: 9, totalCalls: 44, inAht: '00:12:34', outAht: '00:02:31', acw: '00:00:37', totalInTime: '07:20:13', totalOutTime: '00:22:43', totalAcwTime: '00:28:41', pickedUp: 36, missed: 4, s1: 0, s2: 0, s3: 0, s4: 0, s5: 9, surveys: 9, csatAvg: 5.00 }
-      ]
-    };
-
-    function formatNameToInitial(fullName) {
-      const parts = fullName.trim().split(/\s+/);
-      if (parts.length <= 1) return fullName;
-      const first = parts.slice(0, -1).join(' ');
-      const lastInitial = parts[parts.length - 1].replace(/\.$/, '').charAt(0).toUpperCase();
-      return `${first} ${lastInitial}.`;
-    }
-
-    function normalizeAgentName(sheetName) {
-      const clean = sheetName.replace(/^GG\d+\s*/i, '').trim().toLowerCase();
-      if (clean.includes('prince') && clean.includes('aragon')) return 'Prince Felix Troy A.';
-      if (clean.includes('adonis'))       return 'Adonis James S.';
-      if (clean.includes('john wayne'))   return 'John Wayne N.';
-      if (clean.includes('junjun'))       return 'Junjun B.';
-      if (clean.includes('stephen'))      return 'Stephen C.';
-      if (clean.includes('paul'))         return 'Paul Emerson B.';
-      if (clean.includes('joeval'))       return 'Joeval C.';
-      if (clean.includes('leobelyn'))     return 'Leobelyn M.';
-      if (clean.includes('jose armando')) return 'Jose Armando C.';
-      if (clean.includes('francis'))      return 'John Francis C.';
-      if (clean.includes('jessica'))      return 'Jessica F.';
-      if (clean.includes('cedric'))       return 'John Cedric S.';
-      if (clean.includes('judy'))         return 'Judy Flor Q.';
-      return formatNameToInitial(sheetName.replace(/^GG\d+\s*/i, ''));
-    }
-
-    function parseCSV(str) {
-      const rows = [];
-      let row = [];
-      let cur = '';
-      let inQuotes = false;
-      for (let i = 0; i < str.length; i++) {
-        const ch = str[i];
-        const next = str[i + 1];
-        if (inQuotes) {
-          if (ch === '"' && next === '"') {
-            cur += '"';
-            i++;
-          } else if (ch === '"') {
-            inQuotes = false;
-          } else {
-            cur += ch;
-          }
-        } else {
-          if (ch === '"') {
-            inQuotes = true;
-          } else if (ch === ',') {
-            row.push(cur);
-            cur = '';
-          } else if (ch === '\n' || (ch === '\r' && next === '\n')) {
-            if (ch === '\r') i++;
-            row.push(cur);
-            rows.push(row);
-            row = [];
-            cur = '';
-          } else {
-            cur += ch;
-          }
-        }
-      }
-      if (cur.length > 0 || row.length > 0) {
-        row.push(cur);
-        rows.push(row);
-      }
-      return rows;
-    }
-
-    function timeToSec(t) {
-      if (!t || typeof t !== 'string') return 0;
-      const parts = t.trim().split(':').map(Number);
-      if (parts.some(isNaN)) return 0;
-      if (parts.length === 3) return parts[0] * 3600 + parts[1] * 60 + parts[2];
-      if (parts.length === 2) return parts[0] * 60 + parts[1];
-      return 0;
-    }
-
-    function secToTime(sec) {
-      const s = Math.max(0, Math.round(sec));
-      const hrs = Math.floor(s / 3600);
-      const mins = Math.floor((s % 3600) / 60);
-      const secs = s % 60;
-      return `${String(hrs).padStart(2, '0')}:${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
-    }
-
-    // ---- Aircall sheet helpers ----
-    function getCell(cols, idx) {
-      return (idx === undefined || cols[idx] === undefined) ? '' : String(cols[idx]).trim();
-    }
-
-    function getInt(cols, idx) {
-      return parseInt(getCell(cols, idx), 10) || 0;
-    }
-
-    function findAgentByRawName(rawName) {
-      const target = normalizeAgentName(rawName).toLowerCase();
-      return DASHBOARD_DATA.agents.find(a => a.name.toLowerCase() === target);
-    }
-
-    // Reads one Aircall tab: availability row, agent header row, agent rows and the team total row.
-    function readAircallTab(rows) {
-      const result = { hMap: null, agentRows: [], teamRow: null, availability: null };
-      const norm = s => String(s == null ? '' : s).replace(/\s+/g, ' ').trim().toLowerCase();
-      rows.forEach((cols, rowIdx) => {
-        const rowStr = cols.map(norm).join(' ');
-
-        if (rowStr.includes('team available time') && rows[rowIdx + 1]) {
-          result.availability = rows[rowIdx + 1];
-          return;
-        }
-
-        if (rowStr.includes('agent name') && rowStr.includes('answered inbound')) {
-          const hMap = {};
-          cols.forEach((c, idx) => {
-            const lc = norm(c);
-            if (lc === 'agent name')            hMap.name = idx;
-            if (lc === 'answered inbound')      hMap.inbound = idx;
-            if (lc === 'connected outbound')    hMap.outbound = idx;
-            if (lc === 'total calls handled')   hMap.total = idx;
-            if (lc === 'inbound aht')           hMap.inAht = idx;
-            if (lc === 'outbound aht')          hMap.outAht = idx;
-            if (lc === 'avg acw')               hMap.acw = idx;
-            if (lc === 'total inbound time')    hMap.totalInTime = idx;
-            if (lc === 'total outbound time')   hMap.totalOutTime = idx;
-            if (lc === 'total acw time')        hMap.totalAcwTime = idx;
-            if (lc === 'ringing picked up')     hMap.pickedUp = idx;
-            if (lc === 'ringing missed')        hMap.missed = idx;
-          });
-          result.hMap = hMap;
-          return;
-        }
-
-        if (!result.hMap || cols.length < 5) return;
-        const rawName = norm(getCell(cols, result.hMap.name));
-        if (!rawName) return;
-        if (/team total/i.test(rawName)) { result.teamRow = cols; return; }
-        if (/total|team/i.test(rawName)) return;
-        result.agentRows.push({ rawName, cols });
-      });
-      return result;
-    }
-
-    // Dashboard tab team totals take precedence over values recalculated from agent rows.
-    function applyDashboardTeam(t) {
-      const m = DASHBOARD_DATA.teamMetrics;
-      if (t.totalCalls)        m.totalCalls = t.totalCalls;
-      if (t.answeredInbound)   m.answeredInbound = t.answeredInbound;
-      if (t.connectedOutbound) m.connectedOutbound = t.connectedOutbound;
-      if (t.inboundAht)        m.inboundAht = t.inboundAht;
-      if (t.outboundAht)       m.outboundAht = t.outboundAht;
-      if (t.avgAcw)            m.avgAcw = t.avgAcw;
-    }
-
-    // Fetches one tab as CSV. Tries two Google endpoints and reports why a tab failed.
-    async function fetchSheet(sheetId, sheetName, gid) {
-      const urls = [
-        `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(sheetName)}`,
-        `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=csv&gid=${gid}`
-      ];
-      let reason = 'no response';
-      for (const url of urls) {
-        try {
-          const res = await fetch(`${url}&t=${Date.now()}`, { cache: 'no-store' });
-          if (!res.ok) { reason = `HTTP ${res.status}`; continue; }
-          const text = await res.text();
-          if (text.trim().startsWith('<')) { reason = 'sheet not shared publicly'; continue; }
-          return { ok: true, status: res.status, reason: '', text: async () => text };
-        } catch (e) {
-          reason = 'request blocked';
-        }
-      }
-      return { ok: false, status: 0, reason, text: async () => '' };
-    }
-
-    // Remember the last successful sync in this browser so a page reload never shows older numbers.
-    const SNAPSHOT_KEY = 'gelai-dashboard-snapshot';
-
-    function saveSnapshot() {
-      try {
-        localStorage.setItem(SNAPSHOT_KEY, JSON.stringify({
-          savedAt: Date.now(),
-          teamMetrics: DASHBOARD_DATA.teamMetrics,
-          agents: DASHBOARD_DATA.agents
-        }));
-      } catch (e) { /* storage unavailable: the page still works, it just starts from its defaults */ }
-    }
-
-    function loadSnapshot() {
-      try {
-        const raw = localStorage.getItem(SNAPSHOT_KEY);
-        if (!raw) return;
-        const s = JSON.parse(raw);
-        Object.assign(DASHBOARD_DATA.teamMetrics, s.teamMetrics);
-        (s.agents || []).forEach(saved => {
-          const agent = DASHBOARD_DATA.agents.find(a => a.name === saved.name);
-          if (agent) Object.assign(agent, saved);
-        });
-      } catch (e) { /* ignore a corrupt snapshot */ }
-    }
-
-    let isSyncing = false;
-
-    async function syncAllData() {
-      if (isSyncing) return;
-      isSyncing = true;
-
-      const dot = document.getElementById('syncDot');
-      const statusText = document.getElementById('syncStatusText');
-      const icon = document.getElementById('syncIcon');
-      if (icon) icon.classList.add('animate-spin');
-      if (statusText) statusText.textContent = 'Syncing Summary & Summary - Gelai...';
-
-      let aircallMatched = 0;
-      let csatMatched = 0;
-      const syncIssues = []; // reasons a source did not load, shown in the status line
-
-      // 1. Dashboard tab: agent calls, AHT/ACW and team totals (primary source)
-      let dashboardTeam = null;
-      try {
-        const resDash = await fetchSheet(AIRCALL_SHEET_ID, 'Dashboard', 0);
-        if (resDash.ok) {
-          const dashText = await resDash.text();
-          const parsed = readAircallTab(parseCSV(dashText));
-          if (dashText.trim().startsWith('<')) syncIssues.push('Dashboard: sheet not shared publicly');
-          else if (parsed.agentRows.length === 0) {
-            syncIssues.push('Dashboard: no agent rows found');
-            console.warn('Dashboard header found:', !!parsed.hMap, 'first rows received:', JSON.stringify(parseCSV(dashText).slice(0, 14)));
-          }
-          const h = parsed.hMap || {};
-
-          parsed.agentRows.forEach(({ rawName, cols }) => {
-            const agentObj = findAgentByRawName(rawName);
-            if (!agentObj) return;
-
-            const podMatch = rawName.match(/^(GG\d+)/i);
-            if (podMatch) agentObj.pod = podMatch[1].toUpperCase();
-
-            if (h.inbound !== undefined)  agentObj.inbound  = getInt(cols, h.inbound);
-            if (h.outbound !== undefined) agentObj.outbound = getInt(cols, h.outbound);
-            // Clear stale duration totals so weighted averages use the freshly synced AHT/ACW.
-            if (getCell(cols, h.inAht))  { agentObj.inAht = getCell(cols, h.inAht);   agentObj.totalInTime = ''; }
-            if (getCell(cols, h.outAht)) { agentObj.outAht = getCell(cols, h.outAht); agentObj.totalOutTime = ''; }
-            if (getCell(cols, h.acw))    { agentObj.acw = getCell(cols, h.acw);       agentObj.totalAcwTime = ''; }
-            aircallMatched++;
-          });
-
-          if (parsed.teamRow) {
-            const t = parsed.teamRow;
-            dashboardTeam = {
-              totalCalls:        getInt(t, h.total),
-              answeredInbound:   getInt(t, h.inbound),
-              connectedOutbound: getInt(t, h.outbound),
-              inboundAht:        getCell(t, h.inAht),
-              outboundAht:       getCell(t, h.outAht),
-              avgAcw:            getCell(t, h.acw)
-            };
-          }
-        } else {
-          syncIssues.push(`Dashboard: ${resDash.reason}`);
-          console.warn('Aircall Dashboard tab fetch failed, HTTP status:', resDash.status);
-        }
-      } catch (e) {
-        syncIssues.push('Dashboard: request blocked');
-        console.warn('Aircall Dashboard fetch error:', e);
-      }
-
-      // 1b. Summary tab: team availability and the time/ringing detail the Dashboard tab does not carry
-      try {
-        const resSum = await fetchSheet(AIRCALL_SHEET_ID, 'Summary', 1403822292);
-        if (resSum.ok) {
-          const sumText = await resSum.text();
-          const parsed = readAircallTab(parseCSV(sumText));
-          if (sumText.trim().startsWith('<')) syncIssues.push('Summary: sheet not shared publicly');
-          const h = parsed.hMap || {};
-
-          if (parsed.availability) {
-            const v = parsed.availability;
-            if (v[0] && v[0].includes(':')) DASHBOARD_DATA.teamMetrics.availTime = v[0].trim();
-            if (v[1] && v[1].includes(':')) DASHBOARD_DATA.teamMetrics.busyTime = v[1].trim();
-            if (v[2] && v[2].includes(':')) DASHBOARD_DATA.teamMetrics.notAvailTime = v[2].trim();
-          }
-
-          parsed.agentRows.forEach(({ rawName, cols }) => {
-            const agentObj = findAgentByRawName(rawName);
-            if (!agentObj) return;
-            if (getCell(cols, h.totalInTime))  agentObj.totalInTime  = getCell(cols, h.totalInTime);
-            if (getCell(cols, h.totalOutTime)) agentObj.totalOutTime = getCell(cols, h.totalOutTime);
-            if (getCell(cols, h.totalAcwTime)) agentObj.totalAcwTime = getCell(cols, h.totalAcwTime);
-            if (getCell(cols, h.pickedUp) !== '') agentObj.pickedUp = getInt(cols, h.pickedUp);
-            if (getCell(cols, h.missed) !== '')   agentObj.missed   = getInt(cols, h.missed);
-          });
-        } else {
-          syncIssues.push(`Summary: ${resSum.reason}`);
-          console.warn('Aircall Summary tab fetch failed, HTTP status:', resSum.status);
-        }
-      } catch (e) {
-        syncIssues.push('Summary: request blocked');
-        console.warn('Aircall Summary fetch error:', e);
-      }
-
-      // 2. Fetch & Parse CSAT Data ('Summary - Gelai' tab)
-      try {
-        const resCsat = await fetchSheet(CSAT_SHEET_ID, 'Summary - Gelai', 591229430);
-        if (!resCsat.ok) syncIssues.push(`CSAT: ${resCsat.reason}`);
-        if (resCsat.ok) {
-          const csvText = await resCsat.text();
-          const rows = parseCSV(csvText);
-          let w1Sum = 0, w2Sum = 0, w3Sum = 0;
-
-          rows.forEach(cols => {
-            if (!cols || cols.length < 13) return;
-            const rawAgent = (cols[0] || '').trim();
-            const lowerAgent = rawAgent.toLowerCase();
-            if (!rawAgent || lowerAgent === 'agent' || lowerAgent.includes('gelai') || lowerAgent.includes('csat summary') || lowerAgent.includes('total')) return;
-
-            const targetName = normalizeAgentName(rawAgent);
-            const agentObj = DASHBOARD_DATA.agents.find(a => a.name.toLowerCase() === targetName.toLowerCase());
-
-            if (agentObj) {
-              const w1 = parseInt(cols[1], 10) || 0;
-              const w2 = parseInt(cols[2], 10) || 0;
-              const w3 = parseInt(cols[3], 10) || 0;
-              const totalSurveys = parseInt(cols[4], 10) || (w1 + w2 + w3);
-
-              const s1 = parseInt(cols[7], 10) || 0;
-              const s2 = parseInt(cols[8], 10) || 0;
-              const s3 = parseInt(cols[9], 10) || 0;
-              const s4 = parseInt(cols[10], 10) || 0;
-              const s5 = parseInt(cols[11], 10) || 0;
-              const parsedAvg = parseFloat(cols[12]);
-              const avg = !isNaN(parsedAvg) ? parsedAvg : (totalSurveys > 0 ? (s1*1 + s2*2 + s3*3 + s4*4 + s5*5) / totalSurveys : 0);
-
-              agentObj.s1 = s1;
-              agentObj.s2 = s2;
-              agentObj.s3 = s3;
-              agentObj.s4 = s4;
-              agentObj.s5 = s5;
-              agentObj.surveys = totalSurveys;
-              agentObj.csatAvg = avg;
-
-              w1Sum += w1;
-              w2Sum += w2;
-              w3Sum += w3;
-              csatMatched++;
-            }
-          });
-
-          if (csatMatched > 0) {
-            const totS1 = DASHBOARD_DATA.agents.reduce((s, a) => s + a.s1, 0);
-            const totS2 = DASHBOARD_DATA.agents.reduce((s, a) => s + a.s2, 0);
-            const totS3 = DASHBOARD_DATA.agents.reduce((s, a) => s + a.s3, 0);
-            const totS4 = DASHBOARD_DATA.agents.reduce((s, a) => s + a.s4, 0);
-            const totS5 = DASHBOARD_DATA.agents.reduce((s, a) => s + a.s5, 0);
-            const totSurveys = totS1 + totS2 + totS3 + totS4 + totS5;
-            const teamAvg = totSurveys > 0 ? (totS1*1 + totS2*2 + totS3*3 + totS4*4 + totS5*5) / totSurveys : 0;
-
-            DASHBOARD_DATA.teamMetrics.totalSurveys = totSurveys;
-            DASHBOARD_DATA.teamMetrics.teamCsat = teamAvg;
-            DASHBOARD_DATA.teamMetrics.w1Surveys = w1Sum;
-            DASHBOARD_DATA.teamMetrics.w2Surveys = w2Sum;
-            DASHBOARD_DATA.teamMetrics.w3Surveys = w3Sum;
-            DASHBOARD_DATA.teamMetrics.total1Stars = totS1;
-            DASHBOARD_DATA.teamMetrics.total2Stars = totS2;
-            DASHBOARD_DATA.teamMetrics.total3Stars = totS3;
-            DASHBOARD_DATA.teamMetrics.total4Stars = totS4;
-            DASHBOARD_DATA.teamMetrics.total5Stars = totS5;
-          }
-        }
-      } catch (e) {
-        syncIssues.push('CSAT: request blocked');
-        console.warn('CSAT Summary - Gelai fetch error:', e);
-      }
-
-      // 3. Recalculate All Team Aggregates & Weighted Averages
-      recalculateTeamMetrics();
-      if (dashboardTeam) applyDashboardTeam(dashboardTeam);
-      enrichAgents();
-      updateAllBoxes();
-      renderTable();
-      renderCharts();
-
-      if (icon) icon.classList.remove('animate-spin');
-      const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-      if (aircallMatched === 0 && !syncIssues.some(s => s.startsWith('Dashboard'))) syncIssues.push('Dashboard: no agents matched');
-      if (csatMatched === 0 && !syncIssues.some(s => s.startsWith('CSAT'))) syncIssues.push('CSAT: no rows matched');
-      console.info(`Sync result -> Aircall agents matched: ${aircallMatched}, CSAT agents matched: ${csatMatched}`, syncIssues);
-
-      if (syncIssues.length === 0) {
-        if (dot) dot.className = 'h-2.5 w-2.5 rounded-full bg-emerald-600 animate-pulse';
-        if (statusText) statusText.textContent = `Synced (${aircallMatched} Aircall • ${csatMatched} CSAT) • ${now}`;
-      } else {
-        if (dot) dot.className = 'h-2.5 w-2.5 rounded-full bg-amber-500';
-        if (statusText) statusText.textContent = `${syncIssues.join(' • ')} • ${now}`;
-      }
-
-      if (aircallMatched > 0 || csatMatched > 0) saveSnapshot();
-
-      secondsRemaining = 300;
-      isSyncing = false;
-    }
-
-    function recalculateTeamMetrics() {
-      const m = DASHBOARD_DATA.teamMetrics;
-      const agents = DASHBOARD_DATA.agents;
-
-      const totalIn  = agents.reduce((s, a) => s + a.inbound, 0);
-      const totalOut = agents.reduce((s, a) => s + a.outbound, 0);
-      const totalAll = totalIn + totalOut;
-
-      m.answeredInbound = totalIn;
-      m.connectedOutbound = totalOut;
-      m.totalCalls = totalAll;
-
-      // Weighted Inbound AHT, Outbound AHT, and Avg ACW
-      const sumInSec  = agents.reduce((s, a) => s + (timeToSec(a.totalInTime)  || timeToSec(a.inAht) * a.inbound), 0);
-      const sumOutSec = agents.reduce((s, a) => s + (timeToSec(a.totalOutTime) || timeToSec(a.outAht) * a.outbound), 0);
-      const sumAcwSec = agents.reduce((s, a) => s + (timeToSec(a.totalAcwTime) || timeToSec(a.acw) * (a.inbound + a.outbound)), 0);
-
-      m.inboundAht  = totalIn  > 0 ? secToTime(sumInSec / totalIn)   : '00:00:00';
-      m.outboundAht = totalOut > 0 ? secToTime(sumOutSec / totalOut) : '00:00:00';
-      m.avgAcw      = totalAll > 0 ? secToTime(sumAcwSec / totalAll) : '00:00:00';
-
-      m.ringingPickedUp = agents.reduce((s, a) => s + (a.pickedUp || 0), 0);
-      m.ringingMissed   = agents.reduce((s, a) => s + (a.missed || 0), 0);
-    }
-
-    function updateAllBoxes() {
-      const m = DASHBOARD_DATA.teamMetrics;
-
-      // Top 7 Executive KPI Cards
-      document.getElementById('kpiTotalCalls').textContent   = m.totalCalls;
-      document.getElementById('kpiCallsSplit').textContent   = `${m.answeredInbound} In • ${m.connectedOutbound} Out`;
-      document.getElementById('kpiInboundAht').textContent   = m.inboundAht;
-      document.getElementById('kpiOutboundAht').textContent  = m.outboundAht;
-      document.getElementById('kpiAvgAcw').textContent       = m.avgAcw;
-      document.getElementById('kpiTeamCsat').textContent     = m.teamCsat.toFixed(2);
-      document.getElementById('kpiCsatStars').textContent    = `${m.total5Stars}× 5★ • ${m.total4Stars}× 4★`;
-      document.getElementById('kpiTotalSurveys').textContent = m.totalSurveys;
-      document.getElementById('kpiWeeklySplit').textContent  = `W1: ${m.w1Surveys} • W2: ${m.w2Surveys} • W3: ${m.w3Surveys}`;
-
-      const busyShort = m.busyTime.split(':').slice(0, 2).join(':');
-      const offShort  = m.notAvailTime.split(':').slice(0, 2).join(':');
-      document.getElementById('kpiAvailTime').textContent    = m.availTime;
-      document.getElementById('kpiBusyNotAvail').textContent = `Busy: ${busyShort} • Off: ${offShort}`;
-
-      // CSAT Chart Header Badges
-      document.getElementById('csatChartSubtitle').textContent = `5-Star vs. 4-Star Survey Counts (Total: ${m.totalSurveys})`;
-      document.getElementById('csatChartBadge').textContent    = `${m.teamCsat.toFixed(2)} Avg`;
-
-      // Bottom Row: Workforce & Ringing Health Boxes
-      const availSec = timeToSec(m.availTime);
-      const busySec  = timeToSec(m.busyTime);
-      const offSec   = timeToSec(m.notAvailTime);
-      const totalWfSec = availSec + busySec + offSec;
-
-      const availPct = totalWfSec > 0 ? ((availSec / totalWfSec) * 100).toFixed(1) : '0.0';
-      const busyPct  = totalWfSec > 0 ? ((busySec  / totalWfSec) * 100).toFixed(1) : '0.0';
-      const offPct   = totalWfSec > 0 ? ((offSec   / totalWfSec) * 100).toFixed(1) : '0.0';
-
-      document.getElementById('wfAvail').textContent    = `${m.availTime} (${availPct}%)`;
-      document.getElementById('wfBusy').textContent     = `${m.busyTime} (${busyPct}%)`;
-      document.getElementById('wfNotAvail').textContent = `${m.notAvailTime} (${offPct}%)`;
-
-      const totalRings = m.ringingPickedUp + m.ringingMissed;
-      const answerPct  = totalRings > 0 ? ((m.ringingPickedUp / totalRings) * 100).toFixed(1) : '0.0';
-      document.getElementById('wfAnswerRate').textContent = `${answerPct}% (${m.ringingPickedUp} / ${totalRings} Rings)`;
-    }
-
-    let sortKey = 'totalCalls';
-    let sortAsc = false;
-    let volumeChartInstance = null;
-    let ahtChartInstance = null;
-    let csatChartInstance = null;
-
-    function enrichAgents() {
-      DASHBOARD_DATA.agents.forEach(a => {
-        a.totalCalls = a.inbound + a.outbound;
-        a.inAhtSec   = timeToSec(a.inAht);
-        a.outAhtSec  = timeToSec(a.outAht);
-        a.acwSec     = timeToSec(a.acw);
-      });
-    }
-
-    function sortBy(key) {
-      if (sortKey === key) {
-        sortAsc = !sortAsc;
-      } else {
-        sortKey = key;
-        sortAsc = key === 'name';
-      }
-      renderTable();
-    }
-
-    function renderTable() {
-      const search = document.getElementById('agentSearch').value.toLowerCase().trim();
-      const pod = document.getElementById('podFilter').value;
-
-      let filtered = DASHBOARD_DATA.agents.filter(a => {
-        const matchesSearch = !search || a.name.toLowerCase().includes(search) || a.pod.toLowerCase().includes(search);
-        const matchesPod = pod === 'ALL' || a.pod === pod;
-        return matchesSearch && matchesPod;
-      });
-
-      filtered.sort((a, b) => {
-        let valA = a[sortKey];
-        let valB = b[sortKey];
-        if (typeof valA === 'string') {
-          return sortAsc ? valA.localeCompare(valB) : valB.localeCompare(valA);
-        }
-        return sortAsc ? valA - valB : valB - valA;
-      });
-
-      const tbody = document.getElementById('scorecardBody');
-      tbody.innerHTML = filtered.map(a => {
-        const csatBadge = a.csatAvg >= 4.95
-          ? 'bg-emerald-100 text-emerald-800 border-emerald-300'
-          : 'bg-amber-100 text-amber-800 border-amber-300';
-        return `
-          <tr class="hover:bg-stone-50 transition">
-            <td class="py-2.5 px-4 font-semibold text-stone-900 flex items-center gap-2">
-              <span class="px-1.5 py-0.5 text-[10px] mono rounded bg-stone-200 text-stone-700 border border-stone-300">${a.pod}</span>
-              <span>${a.name}</span>
-            </td>
-            <td class="py-2.5 px-3 text-right mono text-stone-700">${a.inbound}</td>
-            <td class="py-2.5 px-3 text-right mono text-stone-700">${a.outbound}</td>
-            <td class="py-2.5 px-3 text-right mono font-bold text-stone-900">${a.totalCalls}</td>
-            <td class="py-2.5 px-3 text-right mono text-stone-700">${a.inAht}</td>
-            <td class="py-2.5 px-3 text-right mono text-stone-700">${a.outAht}</td>
-            <td class="py-2.5 px-3 text-right mono text-stone-700">${a.acw}</td>
-            <td class="py-2.5 px-2 text-center mono text-stone-400 border-l border-stone-200">${a.s1}</td>
-            <td class="py-2.5 px-2 text-center mono text-stone-400">${a.s2}</td>
-            <td class="py-2.5 px-2 text-center mono text-stone-400">${a.s3}</td>
-            <td class="py-2.5 px-2 text-center mono ${a.s4 > 0 ? 'text-amber-700 font-bold' : 'text-stone-400'}">${a.s4}</td>
-            <td class="py-2.5 px-2 text-center mono text-emerald-700 font-semibold">${a.s5}</td>
-            <td class="py-2.5 px-3 text-right mono text-stone-800">${a.surveys}</td>
-            <td class="py-2.5 px-4 text-right">
-              <span class="mono px-2 py-0.5 rounded border text-[11px] font-bold ${csatBadge}">${a.csatAvg.toFixed(2)}</span>
-            </td>
-          </tr>
-        `;
-      }).join('');
-
-      // Dynamic Footer Totals for Filtered View
-      const totIn  = filtered.reduce((s, a) => s + a.inbound, 0);
-      const totOut = filtered.reduce((s, a) => s + a.outbound, 0);
-      const totAll = totIn + totOut;
-
-      const sumInSec  = filtered.reduce((s, a) => s + (timeToSec(a.totalInTime)  || timeToSec(a.inAht) * a.inbound), 0);
-      const sumOutSec = filtered.reduce((s, a) => s + (timeToSec(a.totalOutTime) || timeToSec(a.outAht) * a.outbound), 0);
-      const sumAcwSec = filtered.reduce((s, a) => s + (timeToSec(a.totalAcwTime) || timeToSec(a.acw) * (a.inbound + a.outbound)), 0);
-
-      const footInAht  = totIn  > 0 ? secToTime(sumInSec / totIn)   : '00:00:00';
-      const footOutAht = totOut > 0 ? secToTime(sumOutSec / totOut) : '00:00:00';
-      const footAcw    = totAll > 0 ? secToTime(sumAcwSec / totAll) : '00:00:00';
-
-      const totS1  = filtered.reduce((s, a) => s + a.s1, 0);
-      const totS2  = filtered.reduce((s, a) => s + a.s2, 0);
-      const totS3  = filtered.reduce((s, a) => s + a.s3, 0);
-      const totS4  = filtered.reduce((s, a) => s + a.s4, 0);
-      const totS5  = filtered.reduce((s, a) => s + a.s5, 0);
-      const totSurveys = totS1 + totS2 + totS3 + totS4 + totS5;
-      const weightedCsat = totSurveys > 0
-        ? ((totS1*1 + totS2*2 + totS3*3 + totS4*4 + totS5*5) / totSurveys).toFixed(2)
-        : '0.00';
-
-      document.getElementById('scorecardFoot').innerHTML = `
-        <tr>
-          <td class="py-3 px-4 text-stone-900">TEAM TOTAL / WEIGHTED AVG (${filtered.length} Agents)</td>
-          <td class="py-3 px-3 text-right mono">${totIn}</td>
-          <td class="py-3 px-3 text-right mono">${totOut}</td>
-          <td class="py-3 px-3 text-right mono text-stone-900">${totAll}</td>
-          <td class="py-3 px-3 text-right mono text-stone-700">${footInAht}</td>
-          <td class="py-3 px-3 text-right mono text-stone-700">${footOutAht}</td>
-          <td class="py-3 px-3 text-right mono text-stone-700">${footAcw}</td>
-          <td class="py-3 px-2 text-center mono border-l border-stone-200">${totS1}</td>
-          <td class="py-3 px-2 text-center mono">${totS2}</td>
-          <td class="py-3 px-2 text-center mono">${totS3}</td>
-          <td class="py-3 px-2 text-center mono text-amber-700">${totS4}</td>
-          <td class="py-3 px-2 text-center mono text-emerald-700">${totS5}</td>
-          <td class="py-3 px-3 text-right mono">${totSurveys}</td>
-          <td class="py-3 px-4 text-right mono text-emerald-700">${weightedCsat}</td>
-        </tr>
-      `;
-    }
-
-    function renderCharts() {
-      const sortedByCalls = [...DASHBOARD_DATA.agents].sort((a, b) => b.totalCalls - a.totalCalls);
-      const labels = sortedByCalls.map(a => {
-        const parts = a.name.split(' ');
-        return `${parts[0]} ${parts[parts.length - 1]}`;
-      });
-
-      // 1. Call Volume Chart
-      if (volumeChartInstance) volumeChartInstance.destroy();
-      volumeChartInstance = new Chart(document.getElementById('volumeChart'), {
-        type: 'bar',
-        data: {
-          labels,
-          datasets: [
-            { label: 'Inbound', data: sortedByCalls.map(a => a.inbound), backgroundColor: '#78716c', borderRadius: 4 },
-            { label: 'Outbound', data: sortedByCalls.map(a => a.outbound), backgroundColor: '#d6d3d1', borderRadius: 4 }
-          ]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, font: { family: 'Plus Jakarta Sans', size: 11 } } } },
-          scales: {
-            x: { stacked: true, grid: { display: false }, ticks: { font: { size: 10 }, color: '#78716c' } },
-            y: { stacked: true, grid: { color: '#e7e5e4' }, ticks: { font: { size: 10 }, color: '#78716c' } }
-          }
-        }
-      });
-
-      // 2. AHT Chart
-      if (ahtChartInstance) ahtChartInstance.destroy();
-      ahtChartInstance = new Chart(document.getElementById('ahtChart'), {
-        type: 'bar',
-        data: {
-          labels,
-          datasets: [
-            { label: 'Inbound AHT (min)', data: sortedByCalls.map(a => (a.inAhtSec / 60).toFixed(1)), backgroundColor: '#57534e', borderRadius: 4 },
-            { label: 'Outbound AHT (min)', data: sortedByCalls.map(a => (a.outAhtSec / 60).toFixed(1)), backgroundColor: '#a8a29e', borderRadius: 4 },
-            { label: 'Avg ACW (min)', data: sortedByCalls.map(a => (a.acwSec / 60).toFixed(1)), backgroundColor: '#e7e5e4', borderRadius: 4 }
-          ]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, font: { family: 'Plus Jakarta Sans', size: 11 } } } },
-          scales: {
-            x: { grid: { display: false }, ticks: { font: { size: 10 }, color: '#78716c' } },
-            y: { grid: { color: '#e7e5e4' }, ticks: { font: { size: 10 }, color: '#78716c' } }
-          }
-        }
-      });
-
-      // 3. CSAT Star Distribution Chart
-      const m = DASHBOARD_DATA.teamMetrics;
-      if (csatChartInstance) csatChartInstance.destroy();
-      csatChartInstance = new Chart(document.getElementById('csatChart'), {
-        type: 'doughnut',
-        data: {
-          labels: ['1 Star', '2 Stars', '3 Stars', '4 Stars', '5 Stars'],
-          datasets: [{
-            data: [m.total1Stars, m.total2Stars, m.total3Stars, m.total4Stars, m.total5Stars],
-            backgroundColor: ['#e7e5e4', '#d6d3d1', '#a8a29e', '#f59e0b', '#059669'],
-            borderWidth: 0
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, font: { family: 'Plus Jakarta Sans', size: 11 } } } },
-          cutout: '65%'
-        }
-      });
-    }
-
-    let secondsRemaining = 300;
-    function updateCountdown() {
-      const minutes = Math.floor(secondsRemaining / 60);
-      const seconds = secondsRemaining % 60;
-      const timerEl = document.getElementById('countdownTimer');
-      if (timerEl) {
-        timerEl.textContent = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
-      }
-      if (secondsRemaining > 0) {
-        secondsRemaining--;
-      } else {
-        secondsRemaining = 300;
-        syncAllData();
-      }
-    }
-    setInterval(updateCountdown, 1000);
-
-    window.addEventListener('DOMContentLoaded', () => {
-      loadSnapshot();
-      enrichAgents();
-      updateAllBoxes();
-      renderTable();
-      renderCharts();
-      syncAllData();
-    });
-  </script>
+<!-- Top Command Header -->
+<header class="sticky top-0 z-30 border-b border-stone-300 bg-[#fdfbf7]/95 backdrop-blur-md">
+<div class="max-w-[1600px] mx-auto px-4 sm:px-6 py-3.5 flex flex-wrap items-center justify-between gap-4">
+<div class="flex items-center gap-3.5">
+<div class="h-10 w-10 rounded-xl bg-stone-800 text-stone-100 flex items-center justify-center shadow-sm">
+<svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+<path stroke-linecap="round" stroke-linejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" />
+</svg>
+</div>
+<div>
+<div class="flex items-center gap-2.5">
+<h1 class="text-xl sm:text-2xl font-extrabold tracking-tight text-stone-900">Team Gelai Command Center</h1>
+<span class="px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wider rounded-full bg-stone-200 text-stone-700 border border-stone-300">Phone Channel • 13 Agents</span>
+</div>
+<p class="text-xs text-stone-500 mt-0.5">Live BPO Telephony (<code class="text-stone-700">Summary</code>) &amp; CSAT Intelligence (<code class="text-stone-700">Summary - Gelai</code>)</p>
+</div>
+</div>
+
+<!-- Sync Controls & 5-Min Countdown -->
+<div class="flex flex-wrap items-center gap-3">
+<div class="flex items-center gap-2.5 px-3.5 py-1.5 rounded-lg bg-white border border-stone-300 text-xs shadow-sm">
+<span id="syncDot" class="h-2.5 w-2.5 rounded-full bg-emerald-600 animate-pulse"></span>
+<span id="syncStatusText" class="text-stone-700 font-medium">Ready to Sync Sheets</span>
+<span class="text-stone-300">|</span>
+<span class="text-stone-500">Next refresh: <strong id="countdownTimer" class="mono text-stone-800">05:00</strong></span>
+</div>
+<button id="syncNowBtn" onclick="syncAllData()" class="px-3.5 py-1.5 rounded-lg bg-stone-800 hover:bg-stone-700 text-stone-100 font-semibold text-xs transition flex items-center gap-1.5 shadow-sm cursor-pointer">
+<svg id="syncIcon" class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.4" viewBox="0 0 24 24">
+<path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
+</svg>
+Sync Live Sheets
+</button>
+</div>
+</div>
+</header>
+
+<main class="max-w-[1600px] mx-auto px-4 sm:px-6 py-6 space-y-6">
+
+<!-- Top Executive KPI Strip (7 Cards) -->
+<section class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3.5">
+<div class="kpi-creme rounded-xl p-4 shadow-sm">
+<div class="text-[11px] font-semibold uppercase tracking-wider text-stone-500">Calls Handled</div>
+<div id="kpiTotalCalls" class="mono text-2xl font-bold text-stone-900 mt-1.5">797</div>
+<div id="kpiCallsSplit" class="text-[11px] text-stone-600 mt-1">551 In • 246 Out</div>
+</div>
+
+<div class="kpi-creme rounded-xl p-4 shadow-sm">
+<div class="text-[11px] font-semibold uppercase tracking-wider text-stone-500">Inbound AHT</div>
+<div id="kpiInboundAht" class="mono text-2xl font-bold text-stone-900 mt-1.5">00:11:19</div>
+<div class="text-[11px] text-stone-600 mt-1">Weighted Team Avg</div>
+</div>
+
+<div class="kpi-creme rounded-xl p-4 shadow-sm">
+<div class="text-[11px] font-semibold uppercase tracking-wider text-stone-500">Outbound AHT</div>
+<div id="kpiOutboundAht" class="mono text-2xl font-bold text-stone-900 mt-1.5">00:03:02</div>
+<div class="text-[11px] text-stone-600 mt-1">Weighted Team Avg</div>
+</div>
+
+<div class="kpi-creme rounded-xl p-4 shadow-sm">
+<div class="text-[11px] font-semibold uppercase tracking-wider text-stone-500">Avg ACW</div>
+<div id="kpiAvgAcw" class="mono text-2xl font-bold text-stone-900 mt-1.5">00:00:31</div>
+<div class="text-[11px] text-stone-600 mt-1">After-Call Wrap</div>
+</div>
+
+<div class="kpi-creme rounded-xl p-4 shadow-sm">
+<div class="text-[11px] font-semibold uppercase tracking-wider text-stone-500">Team CSAT</div>
+<div id="kpiTeamCsat" class="mono text-2xl font-bold text-emerald-700 mt-1.5">4.99</div>
+<div id="kpiCsatStars" class="text-[11px] text-stone-600 mt-1">115× 5★ • 1× 4★</div>
+</div>
+
+<div class="kpi-creme rounded-xl p-4 shadow-sm">
+<div class="text-[11px] font-semibold uppercase tracking-wider text-stone-500">Total Surveys</div>
+<div id="kpiTotalSurveys" class="mono text-2xl font-bold text-stone-900 mt-1.5">116</div>
+<div id="kpiWeeklySplit" class="text-[11px] text-stone-600 mt-1">W1: 27 • W2: 53 • W3: 36</div>
+</div>
+
+<div class="kpi-creme rounded-xl p-4 col-span-2 sm:col-span-1 shadow-sm">
+<div class="text-[11px] font-semibold uppercase tracking-wider text-stone-500">Available Time</div>
+<div id="kpiAvailTime" class="mono text-xl sm:text-2xl font-bold text-stone-900 mt-1.5">1022:45:56</div>
+<div id="kpiBusyNotAvail" class="text-[11px] text-stone-600 mt-1">Busy: 124:37 • Off: 201:06</div>
+</div>
+</section>
+
+<!-- Visual Analytics Row -->
+<section class="grid grid-cols-1 lg:grid-cols-3 gap-5">
+<!-- Chart 1: Call Volume by Agent -->
+<div class="creme-card rounded-xl p-5 flex flex-col">
+<div class="flex items-center justify-between mb-3">
+<div>
+<h2 class="text-sm font-bold text-stone-900">Call Volume Distribution</h2>
+<p class="text-xs text-stone-500">Answered Inbound vs. Connected Outbound</p>
+</div>
+<span class="text-[11px] px-2 py-0.5 rounded bg-stone-200 text-stone-700">Aircall Summary</span>
+</div>
+<div class="relative h-64 w-full">
+<canvas id="volumeChart"></canvas>
+</div>
+</div>
+
+<!-- Chart 2: Handle Time Comparison -->
+<div class="creme-card rounded-xl p-5 flex flex-col">
+<div class="flex items-center justify-between mb-3">
+<div>
+<h2 class="text-sm font-bold text-stone-900">AHT &amp; ACW Comparison (Minutes)</h2>
+<p class="text-xs text-stone-500">Inbound AHT, Outbound AHT &amp; Avg ACW</p>
+</div>
+<span class="text-[11px] px-2 py-0.5 rounded bg-stone-200 text-stone-700">Efficiency</span>
+</div>
+<div class="relative h-64 w-full">
+<canvas id="ahtChart"></canvas>
+</div>
+</div>
+
+<!-- Chart 3: CSAT Star Rating Breakdown -->
+<div class="creme-card rounded-xl p-5 flex flex-col">
+<div class="flex items-center justify-between mb-3">
+<div>
+<h2 class="text-sm font-bold text-stone-900">CSAT Rating Distribution</h2>
+<p id="csatChartSubtitle" class="text-xs text-stone-500">5-Star vs. 4-Star Survey Counts (Total: 116)</p>
+</div>
+<span id="csatChartBadge" class="text-[11px] px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300">4.99 Avg</span>
+</div>
+<div class="relative h-64 w-full">
+<canvas id="csatChart"></canvas>
+</div>
+</div>
+</section>
+
+<!-- Consolidated Agent Performance & CSAT Scorecard Table -->
+<section class="creme-card rounded-xl overflow-hidden shadow-sm">
+<div class="p-5 border-b border-stone-200 flex flex-wrap items-center justify-between gap-4">
+<div>
+<h2 class="text-base font-bold text-stone-900">Consolidated Agent Performance &amp; CSAT Scorecard</h2>
+<p class="text-xs text-stone-500 mt-0.5">Unified Aircall telephony metrics and live-synced CSAT survey ratings across all 13 Team Gelai agents</p>
+</div>
+<div class="flex flex-wrap items-center gap-2.5">
+<input id="agentSearch" type="text" placeholder="Filter agent or pod..." oninput="renderTable()"
+class="px-3 py-1.5 rounded-lg bg-white border border-stone-300 text-xs text-stone-900 placeholder-stone-400 focus:outline-none focus:border-stone-600 shadow-sm" />
+<select id="podFilter" onchange="renderTable()"
+class="px-3 py-1.5 rounded-lg bg-white border border-stone-300 text-xs text-stone-800 focus:outline-none focus:border-stone-600 shadow-sm">
+<option value="ALL">All Pods (13)</option>
+<option value="GG08">Pod GG08 (9)</option>
+<option value="GG04">Pod GG04 (2)</option>
+<option value="GG06">Pod GG06 (1)</option>
+<option value="GG03">Pod GG03 (1)</option>
+</select>
+</div>
+</div>
+
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse text-xs">
+<thead>
+<tr class="bg-stone-100 text-stone-700 border-b border-stone-200 uppercase tracking-wider text-[11px]">
+<th class="py-3 px-4 sortable" onclick="sortBy('name')">Agent Name ↕</th>
+<th class="py-3 px-3 text-right sortable" onclick="sortBy('inbound')">Inbound ↕</th>
+<th class="py-3 px-3 text-right sortable" onclick="sortBy('outbound')">Outbound ↕</th>
+<th class="py-3 px-3 text-right sortable" onclick="sortBy('totalCalls')">Total Calls ↕</th>
+<th class="py-3 px-3 text-right sortable" onclick="sortBy('inAhtSec')">Inbound AHT ↕</th>
+<th class="py-3 px-3 text-right sortable" onclick="sortBy('outAhtSec')">Outbound AHT ↕</th>
+<th class="py-3 px-3 text-right sortable" onclick="sortBy('acwSec')">Avg ACW ↕</th>
+<th class="py-3 px-2 text-center border-l border-stone-200">★</th>
+<th class="py-3 px-2 text-center">★★</th>
+<th class="py-3 px-2 text-center">★★★</th>
+<th class="py-3 px-2 text-center">★★★★</th>
+<th class="py-3 px-2 text-center">★★★★★</th>
+<th class="py-3 px-3 text-right sortable" onclick="sortBy('surveys')">Surveys ↕</th>
+<th class="py-3 px-4 text-right sortable" onclick="sortBy('csatAvg')">CSAT Avg ↕</th>
+</tr>
+</thead>
+<tbody id="scorecardBody" class="divide-y divide-stone-200"></tbody>
+<tfoot id="scorecardFoot" class="bg-stone-100 font-bold text-stone-900 border-t-2 border-stone-300"></tfoot>
+</table>
+</div>
+</section>
+
+<!-- Bottom Row: Workforce Breakdown -->
+<section class="creme-card rounded-xl p-5 space-y-4 shadow-sm">
+<div>
+<h2 class="text-sm font-bold text-stone-900">Team Workforce &amp; Ringing Health</h2>
+<p class="text-xs text-stone-500">Aggregated Aircall availability &amp; answer efficiency from <code class="text-stone-700">Summary</code></p>
+</div>
+
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
+<div class="p-3 rounded-lg bg-stone-50 border border-stone-200 flex items-center justify-between">
+<span class="text-stone-600">Available Time</span>
+<span id="wfAvail" class="mono font-bold text-emerald-700">1022:45:56 (75.8%)</span>
+</div>
+<div class="p-3 rounded-lg bg-stone-50 border border-stone-200 flex items-center justify-between">
+<span class="text-stone-600">Busy / In-Call Time</span>
+<span id="wfBusy" class="mono font-bold text-sky-700">124:37:21 (9.2%)</span>
+</div>
+<div class="p-3 rounded-lg bg-stone-50 border border-stone-200 flex items-center justify-between">
+<span class="text-stone-600">Not Available (Lunch/Training/DND)</span>
+<span id="wfNotAvail" class="mono font-bold text-amber-700">201:06:30 (14.9%)</span>
+</div>
+<div class="p-3 rounded-lg bg-stone-50 border border-stone-200 flex items-center justify-between">
+<span class="text-stone-600">Inbound Answer Rate</span>
+<span id="wfAnswerRate" class="mono font-bold text-stone-900">87.2% (551 / 632 Rings)</span>
+</div>
+</div>
+</section>
+
+</main>
+
+<script>
+// Target Spreadsheets & Exact Sheet Names
+const AIRCALL_SHEET_ID = '1N4O-SNVol6nkV1wIQ9TvTBZ_hIbyxGyuH2b_2JlXICg';
+const CSAT_SHEET_ID    = '1rOIkpgBodbJXVqmFvdmaxzO46Qss9MlHdO0gL8k4L1U';
+
+const AIRCALL_CSV_URL = `https://docs.google.com/spreadsheets/d/${AIRCALL_SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent('Summary')}`;
+const CSAT_CSV_URL    = `https://docs.google.com/spreadsheets/d/${CSAT_SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent('Summary - Gelai')}`;
+
+const DASHBOARD_DATA = {
+teamMetrics: {
+totalCalls: 821,
+answeredInbound: 568,
+connectedOutbound: 253,
+inboundAht: '00:11:13',
+outboundAht: '00:03:01',
+avgAcw: '00:00:32',
+availTime: '1056:51:31',
+busyTime: '127:28:13',
+notAvailTime: '202:07:44',
+ringingPickedUp: 581,
+ringingMissed: 60,
+teamCsat: 4.99,
+totalSurveys: 119,
+w1Surveys: 27,
+w2Surveys: 53,
+w3Surveys: 39,
+total5Stars: 118,
+total4Stars: 1,
+total3Stars: 0,
+total2Stars: 0,
+total1Stars: 0
+},
+agents: [
+{ pod: 'GG08', name: 'John Wayne N.', inbound: 56, outbound: 29, totalCalls: 85, inAht: '00:10:54', outAht: '00:02:14', acw: '00:00:33', totalInTime: '10:10:49', totalOutTime: '01:04:53', totalAcwTime: '00:48:27', pickedUp: 56, missed: 4, s1: 0, s2: 0, s3: 0, s4: 0, s5: 8, surveys: 8, csatAvg: 5.00 },
+{ pod: 'GG08', name: 'Junjun B.', inbound: 50, outbound: 31, totalCalls: 81, inAht: '00:12:27', outAht: '00:05:28', acw: '00:00:21', totalInTime: '10:23:16', totalOutTime: '02:49:51', totalAcwTime: '00:28:51', pickedUp: 51, missed: 5, s1: 0, s2: 0, s3: 0, s4: 0, s5: 14, surveys: 14, csatAvg: 5.00 },
+{ pod: 'GG08', name: 'Stephen C.', inbound: 46, outbound: 30, totalCalls: 76, inAht: '00:10:32', outAht: '00:01:53', acw: '00:00:04', totalInTime: '08:05:08', totalOutTime: '00:56:34', totalAcwTime: '00:05:29', pickedUp: 46, missed: 2, s1: 0, s2: 0, s3: 0, s4: 1, s5: 6, surveys: 7, csatAvg: 4.86 },
+{ pod: 'GG04', name: 'Paul Emerson B.', inbound: 38, outbound: 28, totalCalls: 66, inAht: '00:10:29', outAht: '00:02:20', acw: '00:00:10', totalInTime: '06:38:52', totalOutTime: '01:05:20', totalAcwTime: '00:11:50', pickedUp: 38, missed: 5, s1: 0, s2: 0, s3: 0, s4: 0, s5: 11, surveys: 11, csatAvg: 5.00 },
+{ pod: 'GG08', name: 'Joeval C.', inbound: 46, outbound: 20, totalCalls: 66, inAht: '00:12:31', outAht: '00:02:57', acw: '00:00:26', totalInTime: '09:36:11', totalOutTime: '00:59:04', totalAcwTime: '00:29:45', pickedUp: 47, missed: 8, s1: 0, s2: 0, s3: 0, s4: 0, s5: 9, surveys: 9, csatAvg: 5.00 },
+{ pod: 'GG06', name: 'Leobelyn M.', inbound: 49, outbound: 18, totalCalls: 67, inAht: '00:08:41', outAht: '00:01:32', acw: '00:00:08', totalInTime: '07:06:02', totalOutTime: '00:27:45', totalAcwTime: '00:09:34', pickedUp: 51, missed: 4, s1: 0, s2: 0, s3: 0, s4: 0, s5: 5, surveys: 5, csatAvg: 5.00 },
+{ pod: 'GG08', name: 'Jose Armando C.', inbound: 50, outbound: 15, totalCalls: 65, inAht: '00:09:33', outAht: '00:01:10', acw: '00:01:31', totalInTime: '07:57:42', totalOutTime: '00:17:33', totalAcwTime: '01:37:57', pickedUp: 50, missed: 4, s1: 0, s2: 0, s3: 0, s4: 0, s5: 9, surveys: 9, csatAvg: 5.00 },
+{ pod: 'GG08', name: 'Prince Felix Troy A.', inbound: 39, outbound: 18, totalCalls: 57, inAht: '00:11:12', outAht: '00:02:21', acw: '00:01:23', totalInTime: '07:17:07', totalOutTime: '00:42:25', totalAcwTime: '01:19:23', pickedUp: 40, missed: 5, s1: 0, s2: 0, s3: 0, s4: 0, s5: 6, surveys: 6, csatAvg: 5.00 },
+{ pod: 'GG08', name: 'John Francis C.', inbound: 44, outbound: 13, totalCalls: 57, inAht: '00:13:07', outAht: '00:02:46', acw: '00:00:15', totalInTime: '09:37:19', totalOutTime: '00:36:10', totalAcwTime: '00:14:53', pickedUp: 45, missed: 4, s1: 0, s2: 0, s3: 0, s4: 0, s5: 14, surveys: 14, csatAvg: 5.00 },
+{ pod: 'GG03', name: 'Jessica F.', inbound: 45, outbound: 10, totalCalls: 55, inAht: '00:12:25', outAht: '00:03:00', acw: '00:00:54', totalInTime: '09:19:15', totalOutTime: '00:30:04', totalAcwTime: '00:51:58', pickedUp: 46, missed: 5, s1: 0, s2: 0, s3: 0, s4: 0, s5: 11, surveys: 11, csatAvg: 5.00 },
+{ pod: 'GG04', name: 'Adonis James S.', inbound: 26, outbound: 27, totalCalls: 53, inAht: '00:12:36', outAht: '00:06:05', acw: '00:00:07', totalInTime: '05:27:53', totalOutTime: '02:44:17', totalAcwTime: '00:06:55', pickedUp: 29, missed: 3, s1: 0, s2: 0, s3: 0, s4: 0, s5: 10, surveys: 10, csatAvg: 5.00 },
+{ pod: 'GG08', name: 'John Cedric S.', inbound: 44, outbound: 5, totalCalls: 49, inAht: '00:09:46', outAht: '00:01:13', acw: '00:00:22', totalInTime: '07:10:20', totalOutTime: '00:06:05', totalAcwTime: '00:18:40', pickedUp: 46, missed: 7, s1: 0, s2: 0, s3: 0, s4: 0, s5: 6, surveys: 6, csatAvg: 5.00 },
+{ pod: 'GG08', name: 'Judy Flor Q.', inbound: 35, outbound: 9, totalCalls: 44, inAht: '00:12:34', outAht: '00:02:31', acw: '00:00:37', totalInTime: '07:20:13', totalOutTime: '00:22:43', totalAcwTime: '00:28:41', pickedUp: 36, missed: 4, s1: 0, s2: 0, s3: 0, s4: 0, s5: 9, surveys: 9, csatAvg: 5.00 }
+]
+};
+
+function formatNameToInitial(fullName) {
+const parts = fullName.trim().split(/\s+/);
+if (parts.length <= 1) return fullName;
+const first = parts.slice(0, -1).join(' ');
+const lastInitial = parts[parts.length - 1].replace(/\.$/, '').charAt(0).toUpperCase();
+return `${first} ${lastInitial}.`;
+}
+
+function normalizeAgentName(sheetName) {
+const clean = sheetName.replace(/^GG\d+\s*/i, '').trim().toLowerCase();
+if (clean.includes('prince') && clean.includes('aragon')) return 'Prince Felix Troy A.';
+if (clean.includes('adonis'))       return 'Adonis James S.';
+if (clean.includes('john wayne'))   return 'John Wayne N.';
+if (clean.includes('junjun'))       return 'Junjun B.';
+if (clean.includes('stephen'))      return 'Stephen C.';
+if (clean.includes('paul'))         return 'Paul Emerson B.';
+if (clean.includes('joeval'))       return 'Joeval C.';
+if (clean.includes('leobelyn'))     return 'Leobelyn M.';
+if (clean.includes('jose armando')) return 'Jose Armando C.';
+if (clean.includes('francis'))      return 'John Francis C.';
+if (clean.includes('jessica'))      return 'Jessica F.';
+if (clean.includes('cedric'))       return 'John Cedric S.';
+if (clean.includes('judy'))         return 'Judy Flor Q.';
+return formatNameToInitial(sheetName.replace(/^GG\d+\s*/i, ''));
+}
+
+function parseCSV(str) {
+const rows = [];
+let row = [];
+let cur = '';
+let inQuotes = false;
+for (let i = 0; i < str.length; i++) {
+const ch = str[i];
+const next = str[i + 1];
+if (inQuotes) {
+if (ch === '"' && next === '"') {
+cur += '"';
+i++;
+} else if (ch === '"') {
+inQuotes = false;
+} else {
+cur += ch;
+}
+} else {
+if (ch === '"') {
+inQuotes = true;
+} else if (ch === ',') {
+row.push(cur);
+cur = '';
+} else if (ch === '\n' || (ch === '\r' && next === '\n')) {
+if (ch === '\r') i++;
+row.push(cur);
+rows.push(row);
+row = [];
+cur = '';
+} else {
+cur += ch;
+}
+}
+}
+if (cur.length > 0 || row.length > 0) {
+row.push(cur);
+rows.push(row);
+}
+return rows;
+}
+
+function timeToSec(t) {
+if (!t || typeof t !== 'string') return 0;
+const parts = t.trim().split(':').map(Number);
+if (parts.some(isNaN)) return 0;
+if (parts.length === 3) return parts[0] * 3600 + parts[1] * 60 + parts[2];
+if (parts.length === 2) return parts[0] * 60 + parts[1];
+return 0;
+}
+
+function secToTime(sec) {
+const s = Math.max(0, Math.round(sec));
+const hrs = Math.floor(s / 3600);
+const mins = Math.floor((s % 3600) / 60);
+const secs = s % 60;
+return `${String(hrs).padStart(2, '0')}:${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+}
+
+let isSyncing = false;
+
+async function syncAllData() {
+if (isSyncing) return;
+isSyncing = true;
+
+const dot = document.getElementById('syncDot');
+const statusText = document.getElementById('syncStatusText');
+const icon = document.getElementById('syncIcon');
+if (icon) icon.classList.add('animate-spin');
+if (statusText) statusText.textContent = 'Syncing Summary & Summary - Gelai...';
+
+let aircallMatched = 0;
+let csatMatched = 0;
+
+// 1. Fetch & Parse Aircall Data ('Summary' tab)
+try {
+const resAircall = await fetch(`${AIRCALL_CSV_URL}&t=${Date.now()}`, { cache: 'no-store' });
+if (resAircall.ok) {
+const csvText = await resAircall.text();
+const rows = parseCSV(csvText);
+let foundHeader = false;
+let hMap = {};
+
+rows.forEach((cols, rowIdx) => {
+const rowStr = cols.join(' ').toLowerCase();
+
+// Row 3 & Row 4: Team Available Time | Team Busy Time | Team Not Available Time
+if (rowStr.includes('team available time') && rows[rowIdx + 1]) {
+const valRow = rows[rowIdx + 1];
+if (valRow[0] && valRow[0].includes(':')) DASHBOARD_DATA.teamMetrics.availTime = valRow[0].trim();
+if (valRow[1] && valRow[1].includes(':')) DASHBOARD_DATA.teamMetrics.busyTime = valRow[1].trim();
+if (valRow[2] && valRow[2].includes(':')) DASHBOARD_DATA.teamMetrics.notAvailTime = valRow[2].trim();
+return;
+}
+
+// Row 6: Agent Name | User ID | Answered Inbound | Connected Outbound | Total Calls Handled ...
+if (rowStr.includes('agent name') && rowStr.includes('answered inbound')) {
+cols.forEach((c, idx) => {
+const lc = c.trim().toLowerCase();
+if (lc === 'agent name')            hMap.name = idx;
+if (lc === 'answered inbound')      hMap.inbound = idx;
+if (lc === 'connected outbound')    hMap.outbound = idx;
+if (lc === 'total calls handled')   hMap.total = idx;
+if (lc === 'inbound aht')           hMap.inAht = idx;
+if (lc === 'outbound aht')          hMap.outAht = idx;
+if (lc === 'avg acw')               hMap.acw = idx;
+if (lc === 'total inbound time')    hMap.totalInTime = idx;
+if (lc === 'total outbound time')   hMap.totalOutTime = idx;
+if (lc === 'total acw time')        hMap.totalAcwTime = idx;
+if (lc === 'ringing picked up')     hMap.pickedUp = idx;
+if (lc === 'ringing missed')        hMap.missed = idx;
+});
+foundHeader = true;
+return;
+}
+
+// Agent Data Rows (Rows 7+)
+if (foundHeader && cols.length >= 5) {
+const rawName = (cols[hMap.name !== undefined ? hMap.name : 0] || '').trim();
+if (!rawName || rawName.toLowerCase().includes('total') || rawName.toLowerCase().includes('team')) return;
+
+const podMatch = rawName.match(/^(GG\d+)/i);
+const targetName = normalizeAgentName(rawName);
+const agentObj = DASHBOARD_DATA.agents.find(a => a.name.toLowerCase() === targetName.toLowerCase());
+
+if (agentObj) {
+if (podMatch) agentObj.pod = podMatch[1].toUpperCase();
+if (hMap.inbound !== undefined && cols[hMap.inbound] !== '')       agentObj.inbound = parseInt(cols[hMap.inbound], 10) || 0;
+if (hMap.outbound !== undefined && cols[hMap.outbound] !== '')     agentObj.outbound = parseInt(cols[hMap.outbound], 10) || 0;
+if (hMap.total !== undefined && cols[hMap.total] !== '')           agentObj.totalCalls = parseInt(cols[hMap.total], 10) || (agentObj.inbound + agentObj.outbound);
+if (hMap.inAht !== undefined && cols[hMap.inAht])                  agentObj.inAht = cols[hMap.inAht].trim();
+if (hMap.outAht !== undefined && cols[hMap.outAht])                agentObj.outAht = cols[hMap.outAht].trim();
+if (hMap.acw !== undefined && cols[hMap.acw])                      agentObj.acw = cols[hMap.acw].trim();
+if (hMap.totalInTime !== undefined && cols[hMap.totalInTime])      agentObj.totalInTime = cols[hMap.totalInTime].trim();
+if (hMap.totalOutTime !== undefined && cols[hMap.totalOutTime])    agentObj.totalOutTime = cols[hMap.totalOutTime].trim();
+if (hMap.totalAcwTime !== undefined && cols[hMap.totalAcwTime])    agentObj.totalAcwTime = cols[hMap.totalAcwTime].trim();
+if (hMap.pickedUp !== undefined && cols[hMap.pickedUp] !== '')     agentObj.pickedUp = parseInt(cols[hMap.pickedUp], 10) || 0;
+if (hMap.missed !== undefined && cols[hMap.missed] !== '')         agentObj.missed = parseInt(cols[hMap.missed], 10) || 0;
+aircallMatched++;
+}
+}
+});
+}
+} catch (e) {
+console.warn('Aircall Summary fetch error:', e);
+}
+
+// 2. Fetch & Parse CSAT Data ('Summary - Gelai' tab)
+try {
+const resCsat = await fetch(`${CSAT_CSV_URL}&t=${Date.now()}`, { cache: 'no-store' });
+if (resCsat.ok) {
+const csvText = await resCsat.text();
+const rows = parseCSV(csvText);
+let w1Sum = 0, w2Sum = 0, w3Sum = 0;
+
+rows.forEach(cols => {
+if (!cols || cols.length < 13) return;
+const rawAgent = (cols[0] || '').trim();
+const lowerAgent = rawAgent.toLowerCase();
+if (!rawAgent || lowerAgent === 'agent' || lowerAgent.includes('gelai') || lowerAgent.includes('csat summary') || lowerAgent.includes('total')) return;
+
+const targetName = normalizeAgentName(rawAgent);
+const agentObj = DASHBOARD_DATA.agents.find(a => a.name.toLowerCase() === targetName.toLowerCase());
+
+if (agentObj) {
+const w1 = parseInt(cols[1], 10) || 0;
+const w2 = parseInt(cols[2], 10) || 0;
+const w3 = parseInt(cols[3], 10) || 0;
+const totalSurveys = parseInt(cols[4], 10) || (w1 + w2 + w3);
+
+const s1 = parseInt(cols[7], 10) || 0;
+const s2 = parseInt(cols[8], 10) || 0;
+const s3 = parseInt(cols[9], 10) || 0;
+const s4 = parseInt(cols[10], 10) || 0;
+const s5 = parseInt(cols[11], 10) || 0;
+const parsedAvg = parseFloat(cols[12]);
+const avg = !isNaN(parsedAvg) ? parsedAvg : (totalSurveys > 0 ? (s1*1 + s2*2 + s3*3 + s4*4 + s5*5) / totalSurveys : 0);
+
+agentObj.s1 = s1;
+agentObj.s2 = s2;
+agentObj.s3 = s3;
+agentObj.s4 = s4;
+agentObj.s5 = s5;
+agentObj.surveys = totalSurveys;
+agentObj.csatAvg = avg;
+
+w1Sum += w1;
+w2Sum += w2;
+w3Sum += w3;
+csatMatched++;
+}
+});
+
+if (csatMatched > 0) {
+const totS1 = DASHBOARD_DATA.agents.reduce((s, a) => s + a.s1, 0);
+const totS2 = DASHBOARD_DATA.agents.reduce((s, a) => s + a.s2, 0);
+const totS3 = DASHBOARD_DATA.agents.reduce((s, a) => s + a.s3, 0);
+const totS4 = DASHBOARD_DATA.agents.reduce((s, a) => s + a.s4, 0);
+const totS5 = DASHBOARD_DATA.agents.reduce((s, a) => s + a.s5, 0);
+const totSurveys = totS1 + totS2 + totS3 + totS4 + totS5;
+const teamAvg = totSurveys > 0 ? (totS1*1 + totS2*2 + totS3*3 + totS4*4 + totS5*5) / totSurveys : 0;
+
+DASHBOARD_DATA.teamMetrics.totalSurveys = totSurveys;
+DASHBOARD_DATA.teamMetrics.teamCsat = teamAvg;
+DASHBOARD_DATA.teamMetrics.w1Surveys = w1Sum;
+DASHBOARD_DATA.teamMetrics.w2Surveys = w2Sum;
+DASHBOARD_DATA.teamMetrics.w3Surveys = w3Sum;
+DASHBOARD_DATA.teamMetrics.total1Stars = totS1;
+DASHBOARD_DATA.teamMetrics.total2Stars = totS2;
+DASHBOARD_DATA.teamMetrics.total3Stars = totS3;
+DASHBOARD_DATA.teamMetrics.total4Stars = totS4;
+DASHBOARD_DATA.teamMetrics.total5Stars = totS5;
+}
+}
+} catch (e) {
+console.warn('CSAT Summary - Gelai fetch error:', e);
+}
+
+// 3. Recalculate All Team Aggregates & Weighted Averages
+recalculateTeamMetrics();
+enrichAgents();
+updateAllBoxes();
+renderTable();
+renderCharts();
+
+if (icon) icon.classList.remove('animate-spin');
+const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+if (aircallMatched > 0 || csatMatched > 0) {
+if (dot) dot.className = 'h-2.5 w-2.5 rounded-full bg-emerald-600 animate-pulse';
+if (statusText) statusText.textContent = `Synced (${aircallMatched} Aircall • ${csatMatched} CSAT) • ${now}`;
+} else {
+if (dot) dot.className = 'h-2.5 w-2.5 rounded-full bg-amber-500';
+if (statusText) statusText.textContent = `Check Sheet Sharing • ${now}`;
+}
+
+secondsRemaining = 300;
+isSyncing = false;
+}
+
+function recalculateTeamMetrics() {
+const m = DASHBOARD_DATA.teamMetrics;
+const agents = DASHBOARD_DATA.agents;
+
+const totalIn  = agents.reduce((s, a) => s + a.inbound, 0);
+const totalOut = agents.reduce((s, a) => s + a.outbound, 0);
+const totalAll = totalIn + totalOut;
+
+m.answeredInbound = totalIn;
+m.connectedOutbound = totalOut;
+m.totalCalls = totalAll;
+
+// Weighted Inbound AHT, Outbound AHT, and Avg ACW
+const sumInSec  = agents.reduce((s, a) => s + (timeToSec(a.totalInTime)  || timeToSec(a.inAht) * a.inbound), 0);
+const sumOutSec = agents.reduce((s, a) => s + (timeToSec(a.totalOutTime) || timeToSec(a.outAht) * a.outbound), 0);
+const sumAcwSec = agents.reduce((s, a) => s + (timeToSec(a.totalAcwTime) || timeToSec(a.acw) * (a.inbound + a.outbound)), 0);
+
+m.inboundAht  = totalIn  > 0 ? secToTime(sumInSec / totalIn)   : '00:00:00';
+m.outboundAht = totalOut > 0 ? secToTime(sumOutSec / totalOut) : '00:00:00';
+m.avgAcw      = totalAll > 0 ? secToTime(sumAcwSec / totalAll) : '00:00:00';
+
+m.ringingPickedUp = agents.reduce((s, a) => s + (a.pickedUp || 0), 0);
+m.ringingMissed   = agents.reduce((s, a) => s + (a.missed || 0), 0);
+}
+
+function updateAllBoxes() {
+const m = DASHBOARD_DATA.teamMetrics;
+
+// Top 7 Executive KPI Cards
+document.getElementById('kpiTotalCalls').textContent   = m.totalCalls;
+document.getElementById('kpiCallsSplit').textContent   = `${m.answeredInbound} In • ${m.connectedOutbound} Out`;
+document.getElementById('kpiInboundAht').textContent   = m.inboundAht;
+document.getElementById('kpiOutboundAht').textContent  = m.outboundAht;
+document.getElementById('kpiAvgAcw').textContent       = m.avgAcw;
+document.getElementById('kpiTeamCsat').textContent     = m.teamCsat.toFixed(2);
+document.getElementById('kpiCsatStars').textContent    = `${m.total5Stars}× 5★ • ${m.total4Stars}× 4★`;
+document.getElementById('kpiTotalSurveys').textContent = m.totalSurveys;
+document.getElementById('kpiWeeklySplit').textContent  = `W1: ${m.w1Surveys} • W2: ${m.w2Surveys} • W3: ${m.w3Surveys}`;
+
+const busyShort = m.busyTime.split(':').slice(0, 2).join(':');
+const offShort  = m.notAvailTime.split(':').slice(0, 2).join(':');
+document.getElementById('kpiAvailTime').textContent    = m.availTime;
+document.getElementById('kpiBusyNotAvail').textContent = `Busy: ${busyShort} • Off: ${offShort}`;
+
+// CSAT Chart Header Badges
+document.getElementById('csatChartSubtitle').textContent = `5-Star vs. 4-Star Survey Counts (Total: ${m.totalSurveys})`;
+document.getElementById('csatChartBadge').textContent    = `${m.teamCsat.toFixed(2)} Avg`;
+
+// Bottom Row: Workforce & Ringing Health Boxes
+const availSec = timeToSec(m.availTime);
+const busySec  = timeToSec(m.busyTime);
+const offSec   = timeToSec(m.notAvailTime);
+const totalWfSec = availSec + busySec + offSec;
+
+const availPct = totalWfSec > 0 ? ((availSec / totalWfSec) * 100).toFixed(1) : '0.0';
+const busyPct  = totalWfSec > 0 ? ((busySec  / totalWfSec) * 100).toFixed(1) : '0.0';
+const offPct   = totalWfSec > 0 ? ((offSec   / totalWfSec) * 100).toFixed(1) : '0.0';
+
+document.getElementById('wfAvail').textContent    = `${m.availTime} (${availPct}%)`;
+document.getElementById('wfBusy').textContent     = `${m.busyTime} (${busyPct}%)`;
+document.getElementById('wfNotAvail').textContent = `${m.notAvailTime} (${offPct}%)`;
+
+const totalRings = m.ringingPickedUp + m.ringingMissed;
+const answerPct  = totalRings > 0 ? ((m.ringingPickedUp / totalRings) * 100).toFixed(1) : '0.0';
+document.getElementById('wfAnswerRate').textContent = `${answerPct}% (${m.ringingPickedUp} / ${totalRings} Rings)`;
+}
+
+let sortKey = 'totalCalls';
+let sortAsc = false;
+let volumeChartInstance = null;
+let ahtChartInstance = null;
+let csatChartInstance = null;
+
+function enrichAgents() {
+DASHBOARD_DATA.agents.forEach(a => {
+a.totalCalls = a.inbound + a.outbound;
+a.inAhtSec   = timeToSec(a.inAht);
+a.outAhtSec  = timeToSec(a.outAht);
+a.acwSec     = timeToSec(a.acw);
+});
+}
+
+function sortBy(key) {
+if (sortKey === key) {
+sortAsc = !sortAsc;
+} else {
+sortKey = key;
+sortAsc = key === 'name';
+}
+renderTable();
+}
+
+function renderTable() {
+const search = document.getElementById('agentSearch').value.toLowerCase().trim();
+const pod = document.getElementById('podFilter').value;
+
+let filtered = DASHBOARD_DATA.agents.filter(a => {
+const matchesSearch = !search || a.name.toLowerCase().includes(search) || a.pod.toLowerCase().includes(search);
+const matchesPod = pod === 'ALL' || a.pod === pod;
+return matchesSearch && matchesPod;
+});
+
+filtered.sort((a, b) => {
+let valA = a[sortKey];
+let valB = b[sortKey];
+if (typeof valA === 'string') {
+return sortAsc ? valA.localeCompare(valB) : valB.localeCompare(valA);
+}
+return sortAsc ? valA - valB : valB - valA;
+});
+
+const tbody = document.getElementById('scorecardBody');
+tbody.innerHTML = filtered.map(a => {
+const csatBadge = a.csatAvg >= 4.95
+? 'bg-emerald-100 text-emerald-800 border-emerald-300'
+: 'bg-amber-100 text-amber-800 border-amber-300';
+return `
+<tr class="hover:bg-stone-50 transition">
+<td class="py-2.5 px-4 font-semibold text-stone-900 flex items-center gap-2">
+<span class="px-1.5 py-0.5 text-[10px] mono rounded bg-stone-200 text-stone-700 border border-stone-300">${a.pod}</span>
+<span>${a.name}</span>
+</td>
+<td class="py-2.5 px-3 text-right mono text-stone-700">${a.inbound}</td>
+<td class="py-2.5 px-3 text-right mono text-stone-700">${a.outbound}</td>
+<td class="py-2.5 px-3 text-right mono font-bold text-stone-900">${a.totalCalls}</td>
+<td class="py-2.5 px-3 text-right mono text-stone-700">${a.inAht}</td>
+<td class="py-2.5 px-3 text-right mono text-stone-700">${a.outAht}</td>
+<td class="py-2.5 px-3 text-right mono text-stone-700">${a.acw}</td>
+<td class="py-2.5 px-2 text-center mono text-stone-400 border-l border-stone-200">${a.s1}</td>
+<td class="py-2.5 px-2 text-center mono text-stone-400">${a.s2}</td>
+<td class="py-2.5 px-2 text-center mono text-stone-400">${a.s3}</td>
+<td class="py-2.5 px-2 text-center mono ${a.s4 > 0 ? 'text-amber-700 font-bold' : 'text-stone-400'}">${a.s4}</td>
+<td class="py-2.5 px-2 text-center mono text-emerald-700 font-semibold">${a.s5}</td>
+<td class="py-2.5 px-3 text-right mono text-stone-800">${a.surveys}</td>
+<td class="py-2.5 px-4 text-right">
+<span class="mono px-2 py-0.5 rounded border text-[11px] font-bold ${csatBadge}">${a.csatAvg.toFixed(2)}</span>
+</td>
+</tr>
+`;
+}).join('');
+
+// Dynamic Footer Totals for Filtered View
+const totIn  = filtered.reduce((s, a) => s + a.inbound, 0);
+const totOut = filtered.reduce((s, a) => s + a.outbound, 0);
+const totAll = totIn + totOut;
+
+const sumInSec  = filtered.reduce((s, a) => s + (timeToSec(a.totalInTime)  || timeToSec(a.inAht) * a.inbound), 0);
+const sumOutSec = filtered.reduce((s, a) => s + (timeToSec(a.totalOutTime) || timeToSec(a.outAht) * a.outbound), 0);
+const sumAcwSec = filtered.reduce((s, a) => s + (timeToSec(a.totalAcwTime) || timeToSec(a.acw) * (a.inbound + a.outbound)), 0);
+
+const footInAht  = totIn  > 0 ? secToTime(sumInSec / totIn)   : '00:00:00';
+const footOutAht = totOut > 0 ? secToTime(sumOutSec / totOut) : '00:00:00';
+const footAcw    = totAll > 0 ? secToTime(sumAcwSec / totAll) : '00:00:00';
+
+const totS1  = filtered.reduce((s, a) => s + a.s1, 0);
+const totS2  = filtered.reduce((s, a) => s + a.s2, 0);
+const totS3  = filtered.reduce((s, a) => s + a.s3, 0);
+const totS4  = filtered.reduce((s, a) => s + a.s4, 0);
+const totS5  = filtered.reduce((s, a) => s + a.s5, 0);
+const totSurveys = totS1 + totS2 + totS3 + totS4 + totS5;
+const weightedCsat = totSurveys > 0
+? ((totS1*1 + totS2*2 + totS3*3 + totS4*4 + totS5*5) / totSurveys).toFixed(2)
+: '0.00';
+
+document.getElementById('scorecardFoot').innerHTML = `
+<tr>
+<td class="py-3 px-4 text-stone-900">TEAM TOTAL / WEIGHTED AVG (${filtered.length} Agents)</td>
+<td class="py-3 px-3 text-right mono">${totIn}</td>
+<td class="py-3 px-3 text-right mono">${totOut}</td>
+<td class="py-3 px-3 text-right mono text-stone-900">${totAll}</td>
+<td class="py-3 px-3 text-right mono text-stone-700">${footInAht}</td>
+<td class="py-3 px-3 text-right mono text-stone-700">${footOutAht}</td>
+<td class="py-3 px-3 text-right mono text-stone-700">${footAcw}</td>
+<td class="py-3 px-2 text-center mono border-l border-stone-200">${totS1}</td>
+<td class="py-3 px-2 text-center mono">${totS2}</td>
+<td class="py-3 px-2 text-center mono">${totS3}</td>
+<td class="py-3 px-2 text-center mono text-amber-700">${totS4}</td>
+<td class="py-3 px-2 text-center mono text-emerald-700">${totS5}</td>
+<td class="py-3 px-3 text-right mono">${totSurveys}</td>
+<td class="py-3 px-4 text-right mono text-emerald-700">${weightedCsat}</td>
+</tr>
+`;
+}
+
+function renderCharts() {
+const sortedByCalls = [...DASHBOARD_DATA.agents].sort((a, b) => b.totalCalls - a.totalCalls);
+const labels = sortedByCalls.map(a => {
+const parts = a.name.split(' ');
+return `${parts[0]} ${parts[parts.length - 1]}`;
+});
+
+// 1. Call Volume Chart
+if (volumeChartInstance) volumeChartInstance.destroy();
+volumeChartInstance = new Chart(document.getElementById('volumeChart'), {
+type: 'bar',
+data: {
+labels,
+datasets: [
+{ label: 'Inbound', data: sortedByCalls.map(a => a.inbound), backgroundColor: '#78716c', borderRadius: 4 },
+{ label: 'Outbound', data: sortedByCalls.map(a => a.outbound), backgroundColor: '#d6d3d1', borderRadius: 4 }
+]
+},
+options: {
+responsive: true,
+maintainAspectRatio: false,
+plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, font: { family: 'Plus Jakarta Sans', size: 11 } } } },
+scales: {
+x: { stacked: true, grid: { display: false }, ticks: { font: { size: 10 }, color: '#78716c' } },
+y: { stacked: true, grid: { color: '#e7e5e4' }, ticks: { font: { size: 10 }, color: '#78716c' } }
+}
+}
+});
+
+// 2. AHT Chart
+if (ahtChartInstance) ahtChartInstance.destroy();
+ahtChartInstance = new Chart(document.getElementById('ahtChart'), {
+type: 'bar',
+data: {
+labels,
+datasets: [
+{ label: 'Inbound AHT (min)', data: sortedByCalls.map(a => (a.inAhtSec / 60).toFixed(1)), backgroundColor: '#57534e', borderRadius: 4 },
+{ label: 'Outbound AHT (min)', data: sortedByCalls.map(a => (a.outAhtSec / 60).toFixed(1)), backgroundColor: '#a8a29e', borderRadius: 4 },
+{ label: 'Avg ACW (min)', data: sortedByCalls.map(a => (a.acwSec / 60).toFixed(1)), backgroundColor: '#e7e5e4', borderRadius: 4 }
+]
+},
+options: {
+responsive: true,
+maintainAspectRatio: false,
+plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, font: { family: 'Plus Jakarta Sans', size: 11 } } } },
+scales: {
+x: { grid: { display: false }, ticks: { font: { size: 10 }, color: '#78716c' } },
+y: { grid: { color: '#e7e5e4' }, ticks: { font: { size: 10 }, color: '#78716c' } }
+}
+}
+});
+
+// 3. CSAT Star Distribution Chart
+const m = DASHBOARD_DATA.teamMetrics;
+if (csatChartInstance) csatChartInstance.destroy();
+csatChartInstance = new Chart(document.getElementById('csatChart'), {
+type: 'doughnut',
+data: {
+labels: ['1 Star', '2 Stars', '3 Stars', '4 Stars', '5 Stars'],
+datasets: [{
+data: [m.total1Stars, m.total2Stars, m.total3Stars, m.total4Stars, m.total5Stars],
+backgroundColor: ['#e7e5e4', '#d6d3d1', '#a8a29e', '#f59e0b', '#059669'],
+borderWidth: 0
+}]
+},
+options: {
+responsive: true,
+maintainAspectRatio: false,
+plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, font: { family: 'Plus Jakarta Sans', size: 11 } } } },
+cutout: '65%'
+}
+});
+}
+
+let secondsRemaining = 300;
+function updateCountdown() {
+const minutes = Math.floor(secondsRemaining / 60);
+const seconds = secondsRemaining % 60;
+const timerEl = document.getElementById('countdownTimer');
+if (timerEl) {
+timerEl.textContent = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+}
+if (secondsRemaining > 0) {
+secondsRemaining--;
+} else {
+secondsRemaining = 300;
+syncAllData();
+}
+}
+setInterval(updateCountdown, 1000);
+
+window.addEventListener('DOMContentLoaded', () => {
+enrichAgents();
+updateAllBoxes();
+renderTable();
+renderCharts();
+syncAllData();
+});
+</script>
 </body>
 </html>
