@@ -441,23 +441,49 @@
       if (syncBtn) syncBtn.disabled = true;
       if (statusText) statusText.textContent = 'Syncing Summary & Summary - Gelai...';
 
+      let aircallMatched = 0;
+      let csatMatched = 0;
+      let errors = [];
+
+      try {
       const freshState = createEmptyState();
       const agentsMap = new Map();
       let aircallMatched = 0;
       let csatMatched = 0;
       let errors = [];
 
-      // Fetch both sheets fresh in parallel with cache-busting query params
-      const cacheBuster = `&_cb=${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+      async function fetchSheetCsv(url) {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 12000);
+        try {
+          const cacheBuster = `&_cb=${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+          const res = await fetch(`${url}${cacheBuster}`, {
+            cache: 'no-store',
+            signal: controller.signal
+          });
+          if (!res.ok) {
+            throw new Error(`HTTP ${res.status}`);
+          }
+          const text = await res.text();
+          if (/<!doctype html>|<html/i.test(text.slice(0, 200))) {
+            throw new Error('Auth/HTML response instead of CSV');
+          }
+          return text;
+        } finally {
+          clearTimeout(timeoutId);
+        }
+      }
+
+      // Fetch both sheets fresh in parallel with timeout & cache-busting
       const [aircallResult, csatResult] = await Promise.allSettled([
-        fetch(`${AIRCALL_CSV_URL}${cacheBuster}`, { cache: 'no-store' }),
-        fetch(`${CSAT_CSV_URL}${cacheBuster}`, { cache: 'no-store' })
+        fetchSheetCsv(AIRCALL_CSV_URL),
+        fetchSheetCsv(CSAT_CSV_URL)
       ]);
 
       // 1. Parse Aircall Data ('Summary' tab)
       try {
-        if (aircallResult.status === 'fulfilled' && aircallResult.value.ok) {
-          const csvText = await aircallResult.value.text();
+        if (aircallResult.status === 'fulfilled') {
+          const csvText = aircallResult.value;
           const rows = parseCSV(csvText);
           let foundHeader = false;
           let hMap = {};
@@ -525,8 +551,8 @@
 
       // 2. Parse CSAT Data ('Summary - Gelai' tab)
       try {
-        if (csatResult.status === 'fulfilled' && csatResult.value.ok) {
-          const csvText = await csatResult.value.text();
+        if (csatResult.status === 'fulfilled') {
+          const csvText = csatResult.value;
           const rows = parseCSV(csvText);
           let w1Sum = 0, w2Sum = 0, w3Sum = 0;
 
@@ -632,8 +658,27 @@
         if (statusText) statusText.textContent = `Sync Failed (Check Sheet Sharing) • ${now}`;
       }
 
-      secondsRemaining = 300;
-      isSyncing = false;
+      } catch (fatalErr) {
+        console.warn('Sync error:', fatalErr);
+      } finally {
+        if (icon) icon.classList.remove('animate-spin');
+        if (syncBtn) syncBtn.disabled = false;
+
+        const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        if (errors.length === 0 && (aircallMatched > 0 || csatMatched > 0)) {
+          if (dot) dot.className = 'h-2.5 w-2.5 rounded-full bg-emerald-600 animate-pulse';
+          if (statusText) statusText.textContent = `Synced (${aircallMatched} Aircall • ${csatMatched} CSAT) • ${now}`;
+        } else if (aircallMatched > 0 || csatMatched > 0) {
+          if (dot) dot.className = 'h-2.5 w-2.5 rounded-full bg-amber-500';
+          if (statusText) statusText.textContent = `Partial Sync (${errors.join(' & ')} unavailable) • ${now}`;
+        } else {
+          if (dot) dot.className = 'h-2.5 w-2.5 rounded-full bg-rose-500';
+          if (statusText) statusText.textContent = `Sync Failed (Check Sheet Sharing) • ${now}`;
+        }
+
+        secondsRemaining = 300;
+        isSyncing = false;
+      }
     }
 
     function recalculateTeamMetrics() {
