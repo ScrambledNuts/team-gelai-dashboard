@@ -444,13 +444,17 @@
 
       let aircallMatched = 0;
       let csatMatched = 0;
+      const syncIssues = []; // reasons a source did not load, shown in the status line
 
       // 1. Dashboard tab: agent calls, AHT/ACW and team totals (primary source)
       let dashboardTeam = null;
       try {
         const resDash = await fetch(`${AIRCALL_DASHBOARD_CSV_URL}&t=${Date.now()}`, { cache: 'no-store' });
         if (resDash.ok) {
-          const parsed = readAircallTab(parseCSV(await resDash.text()));
+          const dashText = await resDash.text();
+          const parsed = readAircallTab(parseCSV(dashText));
+          if (dashText.trim().startsWith('<')) syncIssues.push('Dashboard: sheet not shared publicly');
+          else if (parsed.agentRows.length === 0) syncIssues.push('Dashboard: no agent rows found');
           const h = parsed.hMap || {};
 
           parsed.agentRows.forEach(({ rawName, cols }) => {
@@ -481,9 +485,11 @@
             };
           }
         } else {
+          syncIssues.push(`Dashboard: HTTP ${resDash.status}`);
           console.warn('Aircall Dashboard tab fetch failed, HTTP status:', resDash.status);
         }
       } catch (e) {
+        syncIssues.push('Dashboard: request blocked');
         console.warn('Aircall Dashboard fetch error:', e);
       }
 
@@ -491,7 +497,9 @@
       try {
         const resSum = await fetch(`${AIRCALL_SUMMARY_CSV_URL}&t=${Date.now()}`, { cache: 'no-store' });
         if (resSum.ok) {
-          const parsed = readAircallTab(parseCSV(await resSum.text()));
+          const sumText = await resSum.text();
+          const parsed = readAircallTab(parseCSV(sumText));
+          if (sumText.trim().startsWith('<')) syncIssues.push('Summary: sheet not shared publicly');
           const h = parsed.hMap || {};
 
           if (parsed.availability) {
@@ -511,15 +519,18 @@
             if (getCell(cols, h.missed) !== '')   agentObj.missed   = getInt(cols, h.missed);
           });
         } else {
+          syncIssues.push(`Summary: HTTP ${resSum.status}`);
           console.warn('Aircall Summary tab fetch failed, HTTP status:', resSum.status);
         }
       } catch (e) {
+        syncIssues.push('Summary: request blocked');
         console.warn('Aircall Summary fetch error:', e);
       }
 
       // 2. Fetch & Parse CSAT Data ('Summary - Gelai' tab)
       try {
         const resCsat = await fetch(`${CSAT_CSV_URL}&t=${Date.now()}`, { cache: 'no-store' });
+        if (!resCsat.ok) syncIssues.push(`CSAT: HTTP ${resCsat.status}`);
         if (resCsat.ok) {
           const csvText = await resCsat.text();
           const rows = parseCSV(csvText);
@@ -585,6 +596,7 @@
           }
         }
       } catch (e) {
+        syncIssues.push('CSAT: request blocked');
         console.warn('CSAT Summary - Gelai fetch error:', e);
       }
 
@@ -598,12 +610,16 @@
 
       if (icon) icon.classList.remove('animate-spin');
       const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-      if (aircallMatched > 0 || csatMatched > 0) {
+      if (aircallMatched === 0 && !syncIssues.some(s => s.startsWith('Dashboard'))) syncIssues.push('Dashboard: no agents matched');
+      if (csatMatched === 0 && !syncIssues.some(s => s.startsWith('CSAT'))) syncIssues.push('CSAT: no rows matched');
+      console.info(`Sync result -> Aircall agents matched: ${aircallMatched}, CSAT agents matched: ${csatMatched}`, syncIssues);
+
+      if (syncIssues.length === 0) {
         if (dot) dot.className = 'h-2.5 w-2.5 rounded-full bg-emerald-600 animate-pulse';
         if (statusText) statusText.textContent = `Synced (${aircallMatched} Aircall • ${csatMatched} CSAT) • ${now}`;
       } else {
         if (dot) dot.className = 'h-2.5 w-2.5 rounded-full bg-amber-500';
-        if (statusText) statusText.textContent = `Check Sheet Sharing • ${now}`;
+        if (statusText) statusText.textContent = `${syncIssues.join(' • ')} • ${now}`;
       }
 
       secondsRemaining = 300;
