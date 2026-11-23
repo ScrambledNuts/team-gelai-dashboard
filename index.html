@@ -473,7 +473,7 @@
         fetchSheetCsv(CSAT_CSV_URL)
       ]);
 
-      // 1. Parse Aircall Data ('Summary' tab)
+      // 1. Parse Aircall Data ('Summary' tab, with fallback to raw tabs if Summary has no agent rows)
       try {
         if (aircallResult.status === 'fulfilled') {
           const csvText = aircallResult.value;
@@ -494,46 +494,84 @@
             }
 
             // Header row: Agent Name | User ID | Answered Inbound | Connected Outbound | Total Calls Handled ...
-            if (rowStr.includes('agent name') && rowStr.includes('answered inbound')) {
+            if (rowStr.includes('agent name') && (rowStr.includes('answered inbound') || rowStr.includes('inbound aht'))) {
+              hMap = {};
               cols.forEach((c, idx) => {
                 const lc = c.trim().toLowerCase();
-                if (lc === 'agent name')            hMap.name = idx;
-                if (lc === 'answered inbound')      hMap.inbound = idx;
-                if (lc === 'connected outbound')    hMap.outbound = idx;
-                if (lc === 'total calls handled')   hMap.total = idx;
-                if (lc === 'inbound aht')           hMap.inAht = idx;
-                if (lc === 'outbound aht')          hMap.outAht = idx;
-                if (lc === 'avg acw')               hMap.acw = idx;
-                if (lc === 'total inbound time')    hMap.totalInTime = idx;
-                if (lc === 'total outbound time')   hMap.totalOutTime = idx;
-                if (lc === 'total acw time')        hMap.totalAcwTime = idx;
-                if (lc === 'ringing picked up')     hMap.pickedUp = idx;
-                if (lc === 'ringing missed')        hMap.missed = idx;
+                if (lc === 'agent name' || lc === 'user' || lc === 'agent') hMap.name = idx;
+                if (lc.includes('answered inbound'))      hMap.inbound = idx;
+                if (lc.includes('connected outbound'))    hMap.outbound = idx;
+                if (lc.includes('total calls handled'))   hMap.total = idx;
+                if (lc.includes('inbound aht') || lc.includes('avg inbound in-call') || lc.includes('avg in call time (inbound)')) hMap.inAht = idx;
+                if (lc.includes('outbound aht') || lc.includes('avg outbound in-call') || lc.includes('avg in call time (outbound)')) hMap.outAht = idx;
+                if (lc.includes('avg acw') || lc.includes('avg after call work')) hMap.acw = idx;
+                if (lc.includes('total inbound time') || lc === 'inbound in-call time') hMap.totalInTime = idx;
+                if (lc.includes('total outbound time') || lc === 'outbound in-call time') hMap.totalOutTime = idx;
+                if (lc.includes('total acw time') || lc === 'after call work time') hMap.totalAcwTime = idx;
+                if (lc.includes('ringing picked up') || lc === 'picked up') hMap.pickedUp = idx;
+                if (lc.includes('ringing missed') || lc === 'not picked up') hMap.missed = idx;
               });
               foundHeader = true;
               return;
             }
 
             // Agent Data Rows
-            if (foundHeader && cols.length >= 5) {
+            if (foundHeader && cols.length >= 2) {
               const rawName = (cols[hMap.name !== undefined ? hMap.name : 0] || '').trim();
               if (!rawName || rawName.toLowerCase().includes('total') || rawName.toLowerCase().includes('team')) return;
 
               const agentObj = getOrCreateAgent(agentsMap, rawName);
-              if (hMap.inbound !== undefined && cols[hMap.inbound] !== '')       agentObj.inbound = Math.round(parseNumber(cols[hMap.inbound]));
-              if (hMap.outbound !== undefined && cols[hMap.outbound] !== '')     agentObj.outbound = Math.round(parseNumber(cols[hMap.outbound]));
-              if (hMap.total !== undefined && cols[hMap.total] !== '')           agentObj.totalCalls = Math.round(parseNumber(cols[hMap.total])) || (agentObj.inbound + agentObj.outbound);
+              if (hMap.inbound !== undefined && cols[hMap.inbound] !== undefined && cols[hMap.inbound] !== '')       agentObj.inbound = Math.round(parseNumber(cols[hMap.inbound]));
+              if (hMap.outbound !== undefined && cols[hMap.outbound] !== undefined && cols[hMap.outbound] !== '')     agentObj.outbound = Math.round(parseNumber(cols[hMap.outbound]));
+              if (hMap.total !== undefined && cols[hMap.total] !== undefined && cols[hMap.total] !== '')           agentObj.totalCalls = Math.round(parseNumber(cols[hMap.total])) || (agentObj.inbound + agentObj.outbound);
               if (hMap.inAht !== undefined && cols[hMap.inAht])                  agentObj.inAht = cols[hMap.inAht].trim();
               if (hMap.outAht !== undefined && cols[hMap.outAht])                agentObj.outAht = cols[hMap.outAht].trim();
               if (hMap.acw !== undefined && cols[hMap.acw])                      agentObj.acw = cols[hMap.acw].trim();
               if (hMap.totalInTime !== undefined && cols[hMap.totalInTime])      agentObj.totalInTime = cols[hMap.totalInTime].trim();
               if (hMap.totalOutTime !== undefined && cols[hMap.totalOutTime])    agentObj.totalOutTime = cols[hMap.totalOutTime].trim();
               if (hMap.totalAcwTime !== undefined && cols[hMap.totalAcwTime])    agentObj.totalAcwTime = cols[hMap.totalAcwTime].trim();
-              if (hMap.pickedUp !== undefined && cols[hMap.pickedUp] !== '')     agentObj.pickedUp = Math.round(parseNumber(cols[hMap.pickedUp]));
-              if (hMap.missed !== undefined && cols[hMap.missed] !== '')         agentObj.missed = Math.round(parseNumber(cols[hMap.missed]));
+              if (hMap.pickedUp !== undefined && cols[hMap.pickedUp] !== undefined && cols[hMap.pickedUp] !== '')     agentObj.pickedUp = Math.round(parseNumber(cols[hMap.pickedUp]));
+              if (hMap.missed !== undefined && cols[hMap.missed] !== undefined && cols[hMap.missed] !== '')         agentObj.missed = Math.round(parseNumber(cols[hMap.missed]));
               aircallMatched++;
             }
           });
+
+          // Fallback: if Summary tab had 0 agent rows, read Raw_Calls_Handled, Raw_Inbound_AHT, Raw_Outbound_AHT, Raw_ACW
+          if (aircallMatched === 0) {
+            console.warn('Aircall Summary tab returned 0 agent rows; trying raw Aircall tabs...');
+            const rawTabs = [
+              { name: 'Raw_Calls_Handled', kind: 'calls' },
+              { name: 'Raw_Inbound_AHT', kind: 'inAht' },
+              { name: 'Raw_Outbound_AHT', kind: 'outAht' },
+              { name: 'Raw_ACW', kind: 'acw' }
+            ];
+            const rawResults = await Promise.allSettled(
+              rawTabs.map(t => fetchSheetCsv(`https://docs.google.com/spreadsheets/d/${AIRCALL_SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(t.name)}`))
+            );
+            rawResults.forEach((res, i) => {
+              if (res.status !== 'fulfilled') return;
+              const tRows = parseCSV(res.value);
+              const kind = rawTabs[i].kind;
+              tRows.forEach((cols, rIdx) => {
+                if (rIdx === 0 || !cols[0]) return;
+                const rawName = String(cols[0]).trim();
+                if (!rawName || rawName.toLowerCase().includes('total')) return;
+                const agentObj = getOrCreateAgent(agentsMap, rawName);
+                if (kind === 'calls') {
+                  agentObj.inbound = Math.round(parseNumber(cols[1]));
+                  agentObj.outbound = Math.round(parseNumber(cols[2]));
+                  agentObj.totalCalls = agentObj.inbound + agentObj.outbound;
+                  aircallMatched++;
+                } else if (kind === 'inAht' && cols[1]) {
+                  agentObj.inAht = String(cols[1]).trim();
+                } else if (kind === 'outAht' && cols[1]) {
+                  agentObj.outAht = String(cols[1]).trim();
+                } else if (kind === 'acw' && cols[1]) {
+                  agentObj.acw = String(cols[1]).trim();
+                }
+              });
+            });
+          }
         } else {
           errors.push('Aircall');
         }
