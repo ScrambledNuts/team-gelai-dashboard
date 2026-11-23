@@ -350,12 +350,8 @@
           } else if (ch === ',') {
             row.push(cur);
             cur = '';
-          } else if (ch === '
-' || (ch === '
-' && next === '
-')) {
-            if (ch === '
-') i++;
+          } else if (ch === '\n' || (ch === '\r' && next === '\n')) {
+            if (ch === '\r') i++;
             row.push(cur);
             rows.push(row);
             row = [];
@@ -448,9 +444,6 @@
       try {
       const freshState = createEmptyState();
       const agentsMap = new Map();
-      let aircallMatched = 0;
-      let csatMatched = 0;
-      let errors = [];
 
       async function fetchSheetCsv(url) {
         const controller = new AbortController();
