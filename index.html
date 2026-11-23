@@ -223,6 +223,42 @@
       </div>
     </section>
 
+    <!-- Bottom Row: Live CSAT Verbatim Feed ('DUMP HERE' tab) -->
+    <section class="creme-card rounded-xl overflow-hidden shadow-sm">
+      <div class="p-5 border-b border-stone-200 flex flex-wrap items-center justify-between gap-4">
+        <div>
+          <div class="flex items-center gap-2.5">
+            <h2 class="text-base font-bold text-stone-900">Team Gelai CSAT Verbatim Feed</h2>
+            <span id="verbatimCountBadge" class="px-2.5 py-0.5 text-[11px] font-semibold rounded-full bg-stone-200 text-stone-700 border border-stone-300">0 Comments</span>
+          </div>
+          <p class="text-xs text-stone-500 mt-0.5">Live customer survey comments from <code class="text-stone-700">DUMP HERE</code> filtered to Team Gelai phone agents</p>
+        </div>
+        <div class="flex flex-wrap items-center gap-2.5">
+          <input id="verbatimSearch" type="text" placeholder="Search comment, customer, or agent..." oninput="renderVerbatims()"
+            class="px-3 py-1.5 rounded-lg bg-white border border-stone-300 text-xs text-stone-900 placeholder-stone-400 focus:outline-none focus:border-stone-600 shadow-sm w-56" />
+          <select id="verbatimAgentFilter" onchange="renderVerbatims()"
+            class="px-3 py-1.5 rounded-lg bg-white border border-stone-300 text-xs text-stone-800 focus:outline-none focus:border-stone-600 shadow-sm">
+            <option value="ALL">All Team Gelai Agents</option>
+          </select>
+          <select id="verbatimScoreFilter" onchange="renderVerbatims()"
+            class="px-3 py-1.5 rounded-lg bg-white border border-stone-300 text-xs text-stone-800 focus:outline-none focus:border-stone-600 shadow-sm">
+            <option value="ALL">All Scores</option>
+            <option value="5">5 ★ Only</option>
+            <option value="4">4 ★ Only</option>
+            <option value="LOW">1–3 ★ Only</option>
+          </select>
+          <label class="inline-flex items-center gap-1.5 text-xs text-stone-600 cursor-pointer select-none px-2.5 py-1.5 rounded-lg bg-stone-50 border border-stone-200">
+            <input id="verbatimHideEmpty" type="checkbox" checked onchange="renderVerbatims()" class="rounded border-stone-300 text-stone-800 focus:ring-stone-600" />
+            <span>Hide empty comments</span>
+          </label>
+        </div>
+      </div>
+
+      <div id="verbatimList" class="p-5 grid grid-cols-1 md:grid-cols-2 gap-3.5 max-h-[540px] overflow-y-auto bg-[#faf9f6]">
+        <div class="col-span-full py-8 text-center text-xs text-stone-500">Waiting for live CSAT verbatim data...</div>
+      </div>
+    </section>
+
   </main>
 
   <script>
@@ -232,6 +268,7 @@
 
     const AIRCALL_CSV_URL = `https://docs.google.com/spreadsheets/d/${AIRCALL_SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent('Summary')}`;
     const CSAT_CSV_URL    = `https://docs.google.com/spreadsheets/d/${CSAT_SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent('Summary - Gelai')}`;
+    const DUMP_CSV_URL    = `https://docs.google.com/spreadsheets/d/${CSAT_SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent('DUMP HERE')}`;
 
     function createEmptyState() {
       return {
@@ -259,7 +296,8 @@
           total2Stars: 0,
           total1Stars: 0
         },
-        agents: []
+        agents: [],
+        verbatims: []
       };
     }
 
@@ -468,10 +506,11 @@
         }
       }
 
-      // Fetch both sheets fresh in parallel with timeout & cache-busting
-      const [aircallResult, csatResult] = await Promise.allSettled([
+      // Fetch all three tabs fresh in parallel with timeout & cache-busting
+      const [aircallResult, csatResult, dumpResult] = await Promise.allSettled([
         fetchSheetCsv(AIRCALL_CSV_URL),
-        fetchSheetCsv(CSAT_CSV_URL)
+        fetchSheetCsv(CSAT_CSV_URL),
+        fetchSheetCsv(DUMP_CSV_URL)
       ]);
 
       // 1. Parse Aircall Data ('Summary' tab, with fallback to raw tabs if Summary has no agent rows)
@@ -670,15 +709,70 @@
         errors.push('CSAT');
       }
 
+      // 3. Parse CSAT Verbatims ('DUMP HERE' tab) filtered to Team Gelai agents
+      try {
+        if (dumpResult.status === 'fulfilled') {
+          const dumpRows = parseCSV(dumpResult.value);
+          const gelaiRosterKeys = new Set([
+            'adonis james s.',
+            'jessica f.',
+            'joeval c.',
+            'john cedric s.',
+            'john francis c.',
+            'john wayne n.',
+            'jose armando c.',
+            'judy flor q.',
+            'junjun b.',
+            'leobelyn m.',
+            'paul emerson b.',
+            'prince felix troy a.',
+            'stephen c.'
+          ]);
+          freshState.agents.forEach(a => gelaiRosterKeys.add(a.name.toLowerCase()));
+
+          const parsedVerbatims = [];
+          dumpRows.forEach((cols, rIdx) => {
+            if (rIdx === 0 || !cols || cols.length < 4) return;
+            const dateStr = (cols[0] || '').trim();
+            const customer = (cols[1] || '').trim() || 'Anonymous';
+            const rawAssignee = (cols[2] || '').trim();
+            const score = Math.round(parseNumber(cols[3]));
+            const rawComment = (cols[4] || '').trim();
+
+            if (!rawAssignee || !dateStr) return;
+            const normAgent = normalizeAgentName(rawAssignee);
+            if (!gelaiRosterKeys.has(normAgent.toLowerCase())) return;
+
+            const cleanedComment = cleanVerbatimComment(rawComment);
+            parsedVerbatims.push({
+              date: dateStr,
+              customer: customer === '-' ? 'Anonymous' : customer,
+              agent: normAgent,
+              rawAgent: rawAssignee,
+              score: score,
+              comment: cleanedComment,
+              hasComment: Boolean(cleanedComment)
+            });
+          });
+
+          parsedVerbatims.sort((a, b) => b.date.localeCompare(a.date));
+          freshState.verbatims = parsedVerbatims;
+        }
+      } catch (e) {
+        console.warn('DUMP HERE verbatim parse error:', e);
+      }
+
       // Commit live state directly from fetched sheets (no fallback values preserved)
       DASHBOARD_DATA = freshState;
 
-      // 3. Recalculate All Team Aggregates & Render UI
+      // 4. Recalculate All Team Aggregates & Render UI
       recalculateTeamMetrics();
       enrichAgents();
       updatePodFilterOptions();
+      updateVerbatimAgentOptions();
       updateAllBoxes();
       renderTable();
+      renderVerbatims();
       renderCharts();
 
       if (icon) icon.classList.remove('animate-spin');
@@ -717,6 +811,138 @@
         secondsRemaining = 300;
         isSyncing = false;
       }
+    }
+
+    function escapeHtml(str) {
+      return String(str || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    function cleanVerbatimComment(raw) {
+      if (!raw) return '';
+      let text = String(raw).trim();
+      if (!text || text === '-' || text === '""') return '';
+
+      // Fix common UTF-8 mojibake artifacts from CSV exports (e.g. thereâ€™s -> there's)
+      text = text
+        .replace(/â€™/g, "'")
+        .replace(/â€œ/g, '"')
+        .replace(/â€/g, '"')
+        .replace(/â€“/g, '–')
+        .replace(/â€”/g, '—');
+
+      // Extract structured survey fields if present:
+      // * Please comment on your rating above!: "..."
+      // * How likely are you to recommend us to friends and family?: "10"
+      const commentMatch = text.match(/Please comment on your rating above!:\s*"([\s\S]*?)"/i);
+      const npsMatch = text.match(/How likely are you to recommend us to friends and family\?:\s*"?(\d+)"?/i);
+
+      if (commentMatch) {
+        const extracted = commentMatch[1].trim();
+        if (!extracted || extracted === '-') return '';
+        return npsMatch ? `${extracted} (NPS: ${npsMatch[1]}/10)` : extracted;
+      }
+
+      // Strip leftover survey prompt boilerplate if quotes weren't closed
+      text = text
+        .replace(/^\*\s*Please comment on your rating above!:\s*/i, '')
+        .replace(/\*\s*How likely are you to recommend us to friends and family\?:\s*"?(\d+)"?/i, ' (NPS: $1/10)')
+        .replace(/^"+|"+$/g, '')
+        .trim();
+
+      return text === '-' ? '' : text;
+    }
+
+    function updateVerbatimAgentOptions() {
+      const select = document.getElementById('verbatimAgentFilter');
+      if (!select) return;
+      const currentVal = select.value || 'ALL';
+      const names = Array.from(new Set(DASHBOARD_DATA.verbatims.map(v => v.agent))).sort();
+      select.innerHTML = `<option value="ALL">All Team Gelai Agents (${DASHBOARD_DATA.verbatims.length})</option>` +
+        names.map(n => {
+          const cnt = DASHBOARD_DATA.verbatims.filter(v => v.agent === n).length;
+          return `<option value="${escapeHtml(n)}">${escapeHtml(n)} (${cnt})</option>`;
+        }).join('');
+      if (currentVal === 'ALL' || names.includes(currentVal)) {
+        select.value = currentVal;
+      } else {
+        select.value = 'ALL';
+      }
+    }
+
+    function renderVerbatims() {
+      const container = document.getElementById('verbatimList');
+      const badge = document.getElementById('verbatimCountBadge');
+      if (!container) return;
+
+      const search = (document.getElementById('verbatimSearch')?.value || '').toLowerCase().trim();
+      const agentFilter = document.getElementById('verbatimAgentFilter')?.value || 'ALL';
+      const scoreFilter = document.getElementById('verbatimScoreFilter')?.value || 'ALL';
+      const hideEmpty = document.getElementById('verbatimHideEmpty')?.checked ?? true;
+
+      const filtered = DASHBOARD_DATA.verbatims.filter(v => {
+        if (hideEmpty && !v.hasComment) return false;
+        if (agentFilter !== 'ALL' && v.agent !== agentFilter) return false;
+        if (scoreFilter === '5' && v.score !== 5) return false;
+        if (scoreFilter === '4' && v.score !== 4) return false;
+        if (scoreFilter === 'LOW' && v.score > 3) return false;
+        if (search) {
+          const hay = `${v.comment} ${v.customer} ${v.agent} ${v.date}`.toLowerCase();
+          if (!hay.includes(search)) return false;
+        }
+        return true;
+      });
+
+      if (badge) {
+        badge.textContent = `${filtered.length} ${filtered.length === 1 ? 'Survey' : 'Surveys'}`;
+      }
+
+      if (filtered.length === 0) {
+        container.innerHTML = `
+          <div class="col-span-full py-8 text-center text-xs text-stone-500">
+            ${DASHBOARD_DATA.verbatims.length === 0
+              ? 'Waiting for live CSAT verbatim data from DUMP HERE...'
+              : 'No customer verbatims match the selected filters.'}
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = filtered.map(v => {
+        const stars = '★'.repeat(Math.max(0, Math.min(5, v.score))) + '☆'.repeat(Math.max(0, 5 - v.score));
+        const scoreStyle = v.score >= 5
+          ? 'bg-emerald-100 text-emerald-800 border-emerald-300'
+          : v.score === 4
+            ? 'bg-amber-100 text-amber-800 border-amber-300'
+            : 'bg-rose-100 text-rose-800 border-rose-300';
+
+        const commentBody = v.hasComment
+          ? `<p class="text-xs text-stone-700 leading-relaxed mt-2.5">“${escapeHtml(v.comment)}”</p>`
+          : `<p class="text-xs italic text-stone-400 mt-2.5">No written comment left by customer.</p>`;
+
+        return `
+          <div class="p-4 rounded-xl bg-white border border-stone-200 shadow-xs flex flex-col justify-between">
+            <div>
+              <div class="flex items-center justify-between gap-2">
+                <div class="flex items-center gap-2 min-w-0">
+                  <span class="px-2 py-0.5 rounded border text-[11px] font-bold mono ${scoreStyle}">${v.score}★ ${stars}</span>
+                  <span class="text-xs font-bold text-stone-900 truncate">${escapeHtml(v.agent)}</span>
+                </div>
+                <span class="mono text-[11px] text-stone-400 shrink-0">${escapeHtml(v.date)}</span>
+              </div>
+              ${commentBody}
+            </div>
+            <div class="mt-3 pt-2 border-t border-stone-100 flex items-center justify-between text-[11px] text-stone-500">
+              <span>Customer: <strong class="font-medium text-stone-700">${escapeHtml(v.customer)}</strong></span>
+              <span class="mono text-[10px] text-stone-400">DUMP HERE</span>
+            </div>
+          </div>
+        `;
+      }).join('');
     }
 
     function recalculateTeamMetrics() {
@@ -1008,6 +1234,7 @@
 
     window.addEventListener('DOMContentLoaded', () => {
       renderTable();
+      renderVerbatims();
       renderCharts();
       syncAllData();
     });
