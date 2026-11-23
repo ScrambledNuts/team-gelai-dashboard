@@ -380,8 +380,9 @@
     // Reads one Aircall tab: availability row, agent header row, agent rows and the team total row.
     function readAircallTab(rows) {
       const result = { hMap: null, agentRows: [], teamRow: null, availability: null };
+      const norm = s => String(s == null ? '' : s).replace(/\s+/g, ' ').trim().toLowerCase();
       rows.forEach((cols, rowIdx) => {
-        const rowStr = cols.join(' ').toLowerCase();
+        const rowStr = cols.map(norm).join(' ');
 
         if (rowStr.includes('team available time') && rows[rowIdx + 1]) {
           result.availability = rows[rowIdx + 1];
@@ -391,7 +392,7 @@
         if (rowStr.includes('agent name') && rowStr.includes('answered inbound')) {
           const hMap = {};
           cols.forEach((c, idx) => {
-            const lc = c.trim().toLowerCase();
+            const lc = norm(c);
             if (lc === 'agent name')            hMap.name = idx;
             if (lc === 'answered inbound')      hMap.inbound = idx;
             if (lc === 'connected outbound')    hMap.outbound = idx;
@@ -410,7 +411,7 @@
         }
 
         if (!result.hMap || cols.length < 5) return;
-        const rawName = getCell(cols, result.hMap.name);
+        const rawName = norm(getCell(cols, result.hMap.name));
         if (!rawName) return;
         if (/team total/i.test(rawName)) { result.teamRow = cols; return; }
         if (/total|team/i.test(rawName)) return;
@@ -501,7 +502,10 @@
           const dashText = await resDash.text();
           const parsed = readAircallTab(parseCSV(dashText));
           if (dashText.trim().startsWith('<')) syncIssues.push('Dashboard: sheet not shared publicly');
-          else if (parsed.agentRows.length === 0) syncIssues.push('Dashboard: no agent rows found');
+          else if (parsed.agentRows.length === 0) {
+            syncIssues.push('Dashboard: no agent rows found');
+            console.warn('Dashboard header found:', !!parsed.hMap, 'first rows received:', JSON.stringify(parseCSV(dashText).slice(0, 14)));
+          }
           const h = parsed.hMap || {};
 
           parsed.agentRows.forEach(({ rawName, cols }) => {
