@@ -252,6 +252,7 @@
           w1Surveys: 0,
           w2Surveys: 0,
           w3Surveys: 0,
+          w4Surveys: 0,
           total5Stars: 0,
           total4Stars: 0,
           total3Stars: 0,
@@ -588,7 +589,7 @@
         if (csatResult.status === 'fulfilled') {
           const csvText = csatResult.value;
           const rows = parseCSV(csvText);
-          let w1Sum = 0, w2Sum = 0, w3Sum = 0;
+          let w1Sum = 0, w2Sum = 0, w3Sum = 0, w4Sum = 0;
 
           rows.forEach(cols => {
             if (!cols || cols.length < 14) return;
@@ -630,6 +631,7 @@
             w1Sum += w1;
             w2Sum += w2;
             w3Sum += w3;
+            w4Sum += w4;
             csatMatched++;
           });
 
@@ -652,6 +654,7 @@
           freshState.teamMetrics.w1Surveys = w1Sum;
           freshState.teamMetrics.w2Surveys = w2Sum;
           freshState.teamMetrics.w3Surveys = w3Sum;
+          freshState.teamMetrics.w4Surveys = w4Sum;
           freshState.teamMetrics.total1Stars = totS1;
           freshState.teamMetrics.total2Stars = totS2;
           freshState.teamMetrics.total3Stars = totS3;
@@ -753,7 +756,7 @@
       document.getElementById('kpiTeamCsat').textContent     = m.teamCsat.toFixed(2);
       document.getElementById('kpiCsatStars').textContent    = `${m.total5Stars}× 5★ • ${m.total4Stars}× 4★`;
       document.getElementById('kpiTotalSurveys').textContent = m.totalSurveys;
-      document.getElementById('kpiWeeklySplit').textContent  = `W1: ${m.w1Surveys} • W2: ${m.w2Surveys} • W3: ${m.w3Surveys}`;
+      document.getElementById('kpiWeeklySplit').textContent  = `W1: ${m.w1Surveys} • W2: ${m.w2Surveys} • W3: ${m.w3Surveys} • W4: ${m.w4Surveys}`;
 
       const busyShort = m.busyTime.split(':').slice(0, 2).join(':');
       const offShort  = m.notAvailTime.split(':').slice(0, 2).join(':');
@@ -885,7 +888,9 @@
       const totS3  = filtered.reduce((s, a) => s + a.s3, 0);
       const totS4  = filtered.reduce((s, a) => s + a.s4, 0);
       const totS5  = filtered.reduce((s, a) => s + a.s5, 0);
-      const totSurveys = totS1 + totS2 + totS3 + totS4 + totS5;
+      const starSum = totS1 + totS2 + totS3 + totS4 + totS5;
+      const surveySum = filtered.reduce((s, a) => s + a.surveys, 0);
+      const totSurveys = starSum > 0 ? starSum : surveySum;
       const weightedCsat = totSurveys > 0
         ? ((totS1*1 + totS2*2 + totS3*3 + totS4*4 + totS5*5) / totSurveys).toFixed(2)
         : '0.00';
