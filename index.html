@@ -451,6 +451,32 @@
       return { ok: false, status: 0, reason, text: async () => '' };
     }
 
+    // Remember the last successful sync in this browser so a page reload never shows older numbers.
+    const SNAPSHOT_KEY = 'gelai-dashboard-snapshot';
+
+    function saveSnapshot() {
+      try {
+        localStorage.setItem(SNAPSHOT_KEY, JSON.stringify({
+          savedAt: Date.now(),
+          teamMetrics: DASHBOARD_DATA.teamMetrics,
+          agents: DASHBOARD_DATA.agents
+        }));
+      } catch (e) { /* storage unavailable: the page still works, it just starts from its defaults */ }
+    }
+
+    function loadSnapshot() {
+      try {
+        const raw = localStorage.getItem(SNAPSHOT_KEY);
+        if (!raw) return;
+        const s = JSON.parse(raw);
+        Object.assign(DASHBOARD_DATA.teamMetrics, s.teamMetrics);
+        (s.agents || []).forEach(saved => {
+          const agent = DASHBOARD_DATA.agents.find(a => a.name === saved.name);
+          if (agent) Object.assign(agent, saved);
+        });
+      } catch (e) { /* ignore a corrupt snapshot */ }
+    }
+
     let isSyncing = false;
 
     async function syncAllData() {
@@ -642,6 +668,8 @@
         if (dot) dot.className = 'h-2.5 w-2.5 rounded-full bg-amber-500';
         if (statusText) statusText.textContent = `${syncIssues.join(' • ')} • ${now}`;
       }
+
+      if (aircallMatched > 0 || csatMatched > 0) saveSnapshot();
 
       secondsRemaining = 300;
       isSyncing = false;
@@ -923,6 +951,7 @@
     setInterval(updateCountdown, 1000);
 
     window.addEventListener('DOMContentLoaded', () => {
+      loadSnapshot();
       enrichAgents();
       updateAllBoxes();
       renderTable();
