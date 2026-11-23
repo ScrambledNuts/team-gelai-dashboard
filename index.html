@@ -581,6 +581,9 @@
       }
 
       // 2. Parse CSAT Data ('Summary - Gelai' tab)
+      // Columns A-F: Agent (0), W1 (1), W2 (2), W3 (3), W4 (4), Total Surveys (5)
+      // Col G (6): blank separator
+      // Columns H-N: Agent (7), 1★ (8), 2★ (9), 3★ (10), 4★ (11), 5★ (12), Total Average (13)
       try {
         if (csatResult.status === 'fulfilled') {
           const csvText = csatResult.value;
@@ -588,7 +591,7 @@
           let w1Sum = 0, w2Sum = 0, w3Sum = 0;
 
           rows.forEach(cols => {
-            if (!cols || cols.length < 13) return;
+            if (!cols || cols.length < 14) return;
             const rawAgent = (cols[0] || '').trim();
             const lowerAgent = rawAgent.toLowerCase();
             if (
@@ -603,14 +606,15 @@
             const w1 = Math.round(parseNumber(cols[1]));
             const w2 = Math.round(parseNumber(cols[2]));
             const w3 = Math.round(parseNumber(cols[3]));
-            const totalSurveys = Math.round(parseNumber(cols[4])) || (w1 + w2 + w3);
+            const w4 = Math.round(parseNumber(cols[4]));
+            const totalSurveys = Math.round(parseNumber(cols[5])) || (w1 + w2 + w3 + w4);
 
-            const s1 = Math.round(parseNumber(cols[7]));
-            const s2 = Math.round(parseNumber(cols[8]));
-            const s3 = Math.round(parseNumber(cols[9]));
-            const s4 = Math.round(parseNumber(cols[10]));
-            const s5 = Math.round(parseNumber(cols[11]));
-            const parsedAvg = parseFloat(String(cols[12] || '').trim());
+            const s1 = Math.round(parseNumber(cols[8]));
+            const s2 = Math.round(parseNumber(cols[9]));
+            const s3 = Math.round(parseNumber(cols[10]));
+            const s4 = Math.round(parseNumber(cols[11]));
+            const s5 = Math.round(parseNumber(cols[12]));
+            const parsedAvg = parseFloat(String(cols[13] || '').trim());
             const avg = !isNaN(parsedAvg)
               ? parsedAvg
               : (totalSurveys > 0 ? (s1 * 1 + s2 * 2 + s3 * 3 + s4 * 4 + s5 * 5) / totalSurveys : 0);
@@ -638,7 +642,7 @@
           const totS5 = freshState.agents.reduce((s, a) => s + a.s5, 0);
           const starTotal = totS1 + totS2 + totS3 + totS4 + totS5;
           const surveySum = freshState.agents.reduce((s, a) => s + a.surveys, 0);
-          const totSurveys = starTotal > 0 ? starTotal : surveySum;
+          const totSurveys = surveySum > 0 ? surveySum : starTotal;
           const teamAvg = starTotal > 0
             ? (totS1 * 1 + totS2 * 2 + totS3 * 3 + totS4 * 4 + totS5 * 5) / starTotal
             : 0;
