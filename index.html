@@ -234,7 +234,8 @@
     const AIRCALL_SHEET_ID = '1N4O-SNVol6nkV1wIQ9TvTBZ_hIbyxGyuH2b_2JlXICg';
     const CSAT_SHEET_ID    = '1rOIkpgBodbJXVqmFvdmaxzO46Qss9MlHdO0gL8k4L1U';
 
-    const AIRCALL_CSV_URL = `https://docs.google.com/spreadsheets/d/${AIRCALL_SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent('Summary')}`;
+    const AIRCALL_DASHBOARD_CSV_URL = `https://docs.google.com/spreadsheets/d/${AIRCALL_SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent('Dashboard')}`;
+    const AIRCALL_SUMMARY_CSV_URL   = `https://docs.google.com/spreadsheets/d/${AIRCALL_SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent('Summary')}`;
     const CSAT_CSV_URL    = `https://docs.google.com/spreadsheets/d/${CSAT_SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent('Summary - Gelai')}`;
 
     const DASHBOARD_DATA = {
@@ -362,6 +363,73 @@
       return `${String(hrs).padStart(2, '0')}:${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
     }
 
+    // ---- Aircall sheet helpers ----
+    function getCell(cols, idx) {
+      return (idx === undefined || cols[idx] === undefined) ? '' : String(cols[idx]).trim();
+    }
+
+    function getInt(cols, idx) {
+      return parseInt(getCell(cols, idx), 10) || 0;
+    }
+
+    function findAgentByRawName(rawName) {
+      const target = normalizeAgentName(rawName).toLowerCase();
+      return DASHBOARD_DATA.agents.find(a => a.name.toLowerCase() === target);
+    }
+
+    // Reads one Aircall tab: availability row, agent header row, agent rows and the team total row.
+    function readAircallTab(rows) {
+      const result = { hMap: null, agentRows: [], teamRow: null, availability: null };
+      rows.forEach((cols, rowIdx) => {
+        const rowStr = cols.join(' ').toLowerCase();
+
+        if (rowStr.includes('team available time') && rows[rowIdx + 1]) {
+          result.availability = rows[rowIdx + 1];
+          return;
+        }
+
+        if (rowStr.includes('agent name') && rowStr.includes('answered inbound')) {
+          const hMap = {};
+          cols.forEach((c, idx) => {
+            const lc = c.trim().toLowerCase();
+            if (lc === 'agent name')            hMap.name = idx;
+            if (lc === 'answered inbound')      hMap.inbound = idx;
+            if (lc === 'connected outbound')    hMap.outbound = idx;
+            if (lc === 'total calls handled')   hMap.total = idx;
+            if (lc === 'inbound aht')           hMap.inAht = idx;
+            if (lc === 'outbound aht')          hMap.outAht = idx;
+            if (lc === 'avg acw')               hMap.acw = idx;
+            if (lc === 'total inbound time')    hMap.totalInTime = idx;
+            if (lc === 'total outbound time')   hMap.totalOutTime = idx;
+            if (lc === 'total acw time')        hMap.totalAcwTime = idx;
+            if (lc === 'ringing picked up')     hMap.pickedUp = idx;
+            if (lc === 'ringing missed')        hMap.missed = idx;
+          });
+          result.hMap = hMap;
+          return;
+        }
+
+        if (!result.hMap || cols.length < 5) return;
+        const rawName = getCell(cols, result.hMap.name);
+        if (!rawName) return;
+        if (/team total/i.test(rawName)) { result.teamRow = cols; return; }
+        if (/total|team/i.test(rawName)) return;
+        result.agentRows.push({ rawName, cols });
+      });
+      return result;
+    }
+
+    // Dashboard tab team totals take precedence over values recalculated from agent rows.
+    function applyDashboardTeam(t) {
+      const m = DASHBOARD_DATA.teamMetrics;
+      if (t.totalCalls)        m.totalCalls = t.totalCalls;
+      if (t.answeredInbound)   m.answeredInbound = t.answeredInbound;
+      if (t.connectedOutbound) m.connectedOutbound = t.connectedOutbound;
+      if (t.inboundAht)        m.inboundAht = t.inboundAht;
+      if (t.outboundAht)       m.outboundAht = t.outboundAht;
+      if (t.avgAcw)            m.avgAcw = t.avgAcw;
+    }
+
     let isSyncing = false;
 
     async function syncAllData() {
@@ -377,74 +445,73 @@
       let aircallMatched = 0;
       let csatMatched = 0;
 
-      // 1. Fetch & Parse Aircall Data ('Summary' tab)
+      // 1. Dashboard tab: agent calls, AHT/ACW and team totals (primary source)
+      let dashboardTeam = null;
       try {
-        const resAircall = await fetch(`${AIRCALL_CSV_URL}&t=${Date.now()}`, { cache: 'no-store' });
-        if (resAircall.ok) {
-          const csvText = await resAircall.text();
-          const rows = parseCSV(csvText);
-          let foundHeader = false;
-          let hMap = {};
+        const resDash = await fetch(`${AIRCALL_DASHBOARD_CSV_URL}&t=${Date.now()}`, { cache: 'no-store' });
+        if (resDash.ok) {
+          const parsed = readAircallTab(parseCSV(await resDash.text()));
+          const h = parsed.hMap || {};
 
-          rows.forEach((cols, rowIdx) => {
-            const rowStr = cols.join(' ').toLowerCase();
+          parsed.agentRows.forEach(({ rawName, cols }) => {
+            const agentObj = findAgentByRawName(rawName);
+            if (!agentObj) return;
 
-            // Row 3 & Row 4: Team Available Time | Team Busy Time | Team Not Available Time
-            if (rowStr.includes('team available time') && rows[rowIdx + 1]) {
-              const valRow = rows[rowIdx + 1];
-              if (valRow[0] && valRow[0].includes(':')) DASHBOARD_DATA.teamMetrics.availTime = valRow[0].trim();
-              if (valRow[1] && valRow[1].includes(':')) DASHBOARD_DATA.teamMetrics.busyTime = valRow[1].trim();
-              if (valRow[2] && valRow[2].includes(':')) DASHBOARD_DATA.teamMetrics.notAvailTime = valRow[2].trim();
-              return;
-            }
+            const podMatch = rawName.match(/^(GG\d+)/i);
+            if (podMatch) agentObj.pod = podMatch[1].toUpperCase();
 
-            // Row 6: Agent Name | User ID | Answered Inbound | Connected Outbound | Total Calls Handled ...
-            if (rowStr.includes('agent name') && rowStr.includes('answered inbound')) {
-              cols.forEach((c, idx) => {
-                const lc = c.trim().toLowerCase();
-                if (lc === 'agent name')            hMap.name = idx;
-                if (lc === 'answered inbound')      hMap.inbound = idx;
-                if (lc === 'connected outbound')    hMap.outbound = idx;
-                if (lc === 'total calls handled')   hMap.total = idx;
-                if (lc === 'inbound aht')           hMap.inAht = idx;
-                if (lc === 'outbound aht')          hMap.outAht = idx;
-                if (lc === 'avg acw')               hMap.acw = idx;
-                if (lc === 'total inbound time')    hMap.totalInTime = idx;
-                if (lc === 'total outbound time')   hMap.totalOutTime = idx;
-                if (lc === 'total acw time')        hMap.totalAcwTime = idx;
-                if (lc === 'ringing picked up')     hMap.pickedUp = idx;
-                if (lc === 'ringing missed')        hMap.missed = idx;
-              });
-              foundHeader = true;
-              return;
-            }
-
-            // Agent Data Rows (Rows 7+)
-            if (foundHeader && cols.length >= 5) {
-              const rawName = (cols[hMap.name !== undefined ? hMap.name : 0] || '').trim();
-              if (!rawName || rawName.toLowerCase().includes('total') || rawName.toLowerCase().includes('team')) return;
-
-              const podMatch = rawName.match(/^(GG\d+)/i);
-              const targetName = normalizeAgentName(rawName);
-              const agentObj = DASHBOARD_DATA.agents.find(a => a.name.toLowerCase() === targetName.toLowerCase());
-
-              if (agentObj) {
-                if (podMatch) agentObj.pod = podMatch[1].toUpperCase();
-                if (hMap.inbound !== undefined && cols[hMap.inbound] !== '')       agentObj.inbound = parseInt(cols[hMap.inbound], 10) || 0;
-                if (hMap.outbound !== undefined && cols[hMap.outbound] !== '')     agentObj.outbound = parseInt(cols[hMap.outbound], 10) || 0;
-                if (hMap.total !== undefined && cols[hMap.total] !== '')           agentObj.totalCalls = parseInt(cols[hMap.total], 10) || (agentObj.inbound + agentObj.outbound);
-                if (hMap.inAht !== undefined && cols[hMap.inAht])                  agentObj.inAht = cols[hMap.inAht].trim();
-                if (hMap.outAht !== undefined && cols[hMap.outAht])                agentObj.outAht = cols[hMap.outAht].trim();
-                if (hMap.acw !== undefined && cols[hMap.acw])                      agentObj.acw = cols[hMap.acw].trim();
-                if (hMap.totalInTime !== undefined && cols[hMap.totalInTime])      agentObj.totalInTime = cols[hMap.totalInTime].trim();
-                if (hMap.totalOutTime !== undefined && cols[hMap.totalOutTime])    agentObj.totalOutTime = cols[hMap.totalOutTime].trim();
-                if (hMap.totalAcwTime !== undefined && cols[hMap.totalAcwTime])    agentObj.totalAcwTime = cols[hMap.totalAcwTime].trim();
-                if (hMap.pickedUp !== undefined && cols[hMap.pickedUp] !== '')     agentObj.pickedUp = parseInt(cols[hMap.pickedUp], 10) || 0;
-                if (hMap.missed !== undefined && cols[hMap.missed] !== '')         agentObj.missed = parseInt(cols[hMap.missed], 10) || 0;
-                aircallMatched++;
-              }
-            }
+            if (h.inbound !== undefined)  agentObj.inbound  = getInt(cols, h.inbound);
+            if (h.outbound !== undefined) agentObj.outbound = getInt(cols, h.outbound);
+            // Clear stale duration totals so weighted averages use the freshly synced AHT/ACW.
+            if (getCell(cols, h.inAht))  { agentObj.inAht = getCell(cols, h.inAht);   agentObj.totalInTime = ''; }
+            if (getCell(cols, h.outAht)) { agentObj.outAht = getCell(cols, h.outAht); agentObj.totalOutTime = ''; }
+            if (getCell(cols, h.acw))    { agentObj.acw = getCell(cols, h.acw);       agentObj.totalAcwTime = ''; }
+            aircallMatched++;
           });
+
+          if (parsed.teamRow) {
+            const t = parsed.teamRow;
+            dashboardTeam = {
+              totalCalls:        getInt(t, h.total),
+              answeredInbound:   getInt(t, h.inbound),
+              connectedOutbound: getInt(t, h.outbound),
+              inboundAht:        getCell(t, h.inAht),
+              outboundAht:       getCell(t, h.outAht),
+              avgAcw:            getCell(t, h.acw)
+            };
+          }
+        } else {
+          console.warn('Aircall Dashboard tab fetch failed, HTTP status:', resDash.status);
+        }
+      } catch (e) {
+        console.warn('Aircall Dashboard fetch error:', e);
+      }
+
+      // 1b. Summary tab: team availability and the time/ringing detail the Dashboard tab does not carry
+      try {
+        const resSum = await fetch(`${AIRCALL_SUMMARY_CSV_URL}&t=${Date.now()}`, { cache: 'no-store' });
+        if (resSum.ok) {
+          const parsed = readAircallTab(parseCSV(await resSum.text()));
+          const h = parsed.hMap || {};
+
+          if (parsed.availability) {
+            const v = parsed.availability;
+            if (v[0] && v[0].includes(':')) DASHBOARD_DATA.teamMetrics.availTime = v[0].trim();
+            if (v[1] && v[1].includes(':')) DASHBOARD_DATA.teamMetrics.busyTime = v[1].trim();
+            if (v[2] && v[2].includes(':')) DASHBOARD_DATA.teamMetrics.notAvailTime = v[2].trim();
+          }
+
+          parsed.agentRows.forEach(({ rawName, cols }) => {
+            const agentObj = findAgentByRawName(rawName);
+            if (!agentObj) return;
+            if (getCell(cols, h.totalInTime))  agentObj.totalInTime  = getCell(cols, h.totalInTime);
+            if (getCell(cols, h.totalOutTime)) agentObj.totalOutTime = getCell(cols, h.totalOutTime);
+            if (getCell(cols, h.totalAcwTime)) agentObj.totalAcwTime = getCell(cols, h.totalAcwTime);
+            if (getCell(cols, h.pickedUp) !== '') agentObj.pickedUp = getInt(cols, h.pickedUp);
+            if (getCell(cols, h.missed) !== '')   agentObj.missed   = getInt(cols, h.missed);
+          });
+        } else {
+          console.warn('Aircall Summary tab fetch failed, HTTP status:', resSum.status);
         }
       } catch (e) {
         console.warn('Aircall Summary fetch error:', e);
@@ -523,6 +590,7 @@
 
       // 3. Recalculate All Team Aggregates & Weighted Averages
       recalculateTeamMetrics();
+      if (dashboardTeam) applyDashboardTeam(dashboardTeam);
       enrichAgents();
       updateAllBoxes();
       renderTable();
