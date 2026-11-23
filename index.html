@@ -430,6 +430,27 @@
       if (t.avgAcw)            m.avgAcw = t.avgAcw;
     }
 
+    // Fetches one tab as CSV. Tries two Google endpoints and reports why a tab failed.
+    async function fetchSheet(sheetId, sheetName, gid) {
+      const urls = [
+        `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(sheetName)}`,
+        `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=csv&gid=${gid}`
+      ];
+      let reason = 'no response';
+      for (const url of urls) {
+        try {
+          const res = await fetch(`${url}&t=${Date.now()}`, { cache: 'no-store' });
+          if (!res.ok) { reason = `HTTP ${res.status}`; continue; }
+          const text = await res.text();
+          if (text.trim().startsWith('<')) { reason = 'sheet not shared publicly'; continue; }
+          return { ok: true, status: res.status, reason: '', text: async () => text };
+        } catch (e) {
+          reason = 'request blocked';
+        }
+      }
+      return { ok: false, status: 0, reason, text: async () => '' };
+    }
+
     let isSyncing = false;
 
     async function syncAllData() {
@@ -449,7 +470,7 @@
       // 1. Dashboard tab: agent calls, AHT/ACW and team totals (primary source)
       let dashboardTeam = null;
       try {
-        const resDash = await fetch(`${AIRCALL_DASHBOARD_CSV_URL}&t=${Date.now()}`, { cache: 'no-store' });
+        const resDash = await fetchSheet(AIRCALL_SHEET_ID, 'Dashboard', 0);
         if (resDash.ok) {
           const dashText = await resDash.text();
           const parsed = readAircallTab(parseCSV(dashText));
@@ -485,7 +506,7 @@
             };
           }
         } else {
-          syncIssues.push(`Dashboard: HTTP ${resDash.status}`);
+          syncIssues.push(`Dashboard: ${resDash.reason}`);
           console.warn('Aircall Dashboard tab fetch failed, HTTP status:', resDash.status);
         }
       } catch (e) {
@@ -495,7 +516,7 @@
 
       // 1b. Summary tab: team availability and the time/ringing detail the Dashboard tab does not carry
       try {
-        const resSum = await fetch(`${AIRCALL_SUMMARY_CSV_URL}&t=${Date.now()}`, { cache: 'no-store' });
+        const resSum = await fetchSheet(AIRCALL_SHEET_ID, 'Summary', 1403822292);
         if (resSum.ok) {
           const sumText = await resSum.text();
           const parsed = readAircallTab(parseCSV(sumText));
@@ -519,7 +540,7 @@
             if (getCell(cols, h.missed) !== '')   agentObj.missed   = getInt(cols, h.missed);
           });
         } else {
-          syncIssues.push(`Summary: HTTP ${resSum.status}`);
+          syncIssues.push(`Summary: ${resSum.reason}`);
           console.warn('Aircall Summary tab fetch failed, HTTP status:', resSum.status);
         }
       } catch (e) {
@@ -529,8 +550,8 @@
 
       // 2. Fetch & Parse CSAT Data ('Summary - Gelai' tab)
       try {
-        const resCsat = await fetch(`${CSAT_CSV_URL}&t=${Date.now()}`, { cache: 'no-store' });
-        if (!resCsat.ok) syncIssues.push(`CSAT: HTTP ${resCsat.status}`);
+        const resCsat = await fetchSheet(CSAT_SHEET_ID, 'Summary - Gelai', 591229430);
+        if (!resCsat.ok) syncIssues.push(`CSAT: ${resCsat.reason}`);
         if (resCsat.ok) {
           const csvText = await resCsat.text();
           const rows = parseCSV(csvText);
